@@ -1,0 +1,7 @@
+name: partial sum
+defined_in: geometric-series
+short_definition: |
+  The sum of just the first $n$ terms of an infinite series. Studying
+  partial sums is how you make sense of an infinite sum: instead of
+  trying to add infinitely many things at once, you watch where the
+  partial sums *go* as $n$ grows.

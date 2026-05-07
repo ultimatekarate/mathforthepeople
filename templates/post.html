@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="post post--{{ post.author }}{% if post.is_draft %} post--draft{% endif %}">
+  <header class="post-header">
+    {% if post.is_draft %}
+      <p class="draft-banner">
+        <strong>Draft.</strong>
+        This post is hidden from the production build. It only appears here
+        because you're running <code>python serve.py</code>.
+      </p>
+    {% endif %}
+    <h1>{{ post.title }}</h1>
+    <p class="byline">
+      by <a href="/{{ post.author }}/">{{ author.name }}</a>
+      <span class="sep">·</span>
+      <time datetime="{{ post.date }}">{{ post.date_human }}</time>
+      {% if post.author == 'dipshit' %}
+        <span class="sep">·</span>
+        <span class="warning-tag">filed under: nonsense</span>
+      {% endif %}
+      {% if post.is_draft %}
+        <span class="sep">·</span>
+        <span class="draft-tag">draft</span>
+      {% endif %}
+    </p>
+  </header>
+
+  {% if background %}
+  <aside class="background">
+    <span class="background-label">Concepts used:</span>
+    <span class="background-terms">
+      {% for term in background %}
+        <a class="glossary-ref background-term" href="/glossary/#{{ term.id }}"
+           data-term="{{ term.id }}">{{ term.name }}</a>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </span>
+  </aside>
+  {% endif %}
+
+  <div class="post-content">
+    {{ post.html | safe }}
+  </div>
+
+  {% if rabbit_hole %}
+  <aside class="rabbit-hole">
+    <h2>The rabbit hole</h2>
+    <p class="rabbit-hole-intro">
+      Posts this one draws on, and what those posts draw on
+      ({{ rabbit_hole_size }} {% if rabbit_hole_size == 1 %}post{% else %}posts{% endif %} total).
+      Follow as deep as you like.
+    </p>
+    <ul class="rabbit-hole-tree">
+      {% for node in rabbit_hole recursive %}
+      <li>
+        <a href="/{{ node.slug }}/">{{ node.title }}</a>
+        {% if node.already_seen %}
+          <span class="rabbit-hole-seen">— shown above</span>
+        {% endif %}
+        {% if node.children %}
+          <ul>{{ loop(node.children) }}</ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  {% endif %}
+
+  {% if backlinks %}
+  <aside class="backlinks">
+    <h2>Referenced by</h2>
+    <ul>
+      {% for bl in backlinks %}
+      <li><a href="/{{ bl.slug }}/">{{ bl.title }}</a></li>
+      {% endfor %}
+    </ul>
+  </aside>
+  {% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title }}</title>
+  <meta name="description" content="{{ page.description }}">
+
+  {# Open Graph (Facebook, LinkedIn, Slack, etc.) and Twitter Cards.
+     Drives the link preview when a post URL is shared anywhere — without
+     these, the share looks barren. The `page` dict is built in build.py
+     by make_page() and passed to every template. #}
+  <meta property="og:title" content="{{ page.title }}">
+  <meta property="og:description" content="{{ page.description }}">
+  <meta property="og:url" content="{{ page.url }}">
+  <meta property="og:type" content="{{ page.og_type }}">
+  <meta property="og:site_name" content="{{ site.title }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page.title }}">
+  <meta name="twitter:description" content="{{ page.description }}">
+
+  {# Favicon: a simple SVG that scales to any tab size. Edit static/favicon.svg
+     to taste. The data: URL fallback is just a transparent square so browsers
+     don't request /favicon.ico and 404. #}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="stylesheet" href="/style.css">
+
+  {# KaTeX: server-side rendering would be nicer but adds a Node dep.
+     Loading from CDN keeps the build pure-Python. #}
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+        integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+        crossorigin="anonymous">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+          integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
+          crossorigin="anonymous"></script>
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+          integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMofbpV+t1XHMM5lKO"
+          crossorigin="anonymous"
+          onload="renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$',  right: '$',  display: false}
+            ],
+            throwOnError: false
+          });"></script>
+
+  {# TikZJax: enables raw TikZ inside <script type='text/tikz'>...</script> blocks.
+     Optional — comment this out if you don't want the extra ~400KB download. #}
+  <link rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/fonts.css">
+  <script src="https://tikzjax.com/v1/tikzjax.js"></script>
+
+  <link rel="alternate" type="application/rss+xml"
+        title="{{ site.title }}" href="/feed.xml">
+
+  {# Glossary data for the popover machinery. Inlined as a JSON blob so
+     `popovers.js` can do synchronous lookups by term id. #}
+  <script>window.GLOSSARY = {{ glossary_json | safe }};</script>
+  <script defer src="/popovers.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="masthead" href="/">{{ site.title }}</a>
+    <nav>
+      <a href="/">Posts</a>
+      <a href="/glossary/">Glossary</a>
+      <a href="/joe/">Dr. Joe</a>
+      <a href="/dipshit/">Dr. Dipshit</a>
+      <a href="/feed.xml">RSS</a>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>© {{ year }} · plain HTML, no ads, no tracking · <a href="/feed.xml">RSS</a></p>
+  </footer>
+</body>
+</html>

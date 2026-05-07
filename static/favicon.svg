@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Cream background tile, deep claret sigma. The palette mirrors the
+       site's editorial theme so the tab icon feels of a piece. -->
+  <rect width="32" height="32" rx="4" fill="#faf6ee"/>
+  <text x="16" y="23" text-anchor="middle"
+        font-family="Iowan Old Style, Charter, Georgia, serif"
+        font-weight="600"
+        font-size="22"
+        fill="#7a1c1c">Σ</text>
+</svg>

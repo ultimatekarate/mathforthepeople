@@ -1,0 +1,6 @@
+name: limit
+short_definition: |
+  The value an infinite process approaches but typically never reaches.
+  Saying a sequence has limit $L$ means: for any tolerance, no matter
+  how small, the sequence eventually gets within that tolerance of $L$
+  and stays there.

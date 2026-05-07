@@ -1,0 +1,7 @@
+name: convergence
+defined_in: convergence-explained
+short_definition: |
+  The property of an infinite process — a sum, a sequence, an iteration —
+  that it eventually settles arbitrarily close to a fixed value, called
+  its *limit*. The opposite is *divergence*: the process either grows
+  without bound or oscillates without ever picking a target.

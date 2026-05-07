@@ -1,0 +1,7 @@
+name: geometric series
+aliases: [GP]
+defined_in: geometric-series
+short_definition: |
+  An infinite sum where each term is a fixed multiple of the previous one,
+  written $a + ar + ar^2 + \cdots$. When $|r| < 1$ the terms shrink fast
+  enough that the whole sum settles on a finite value.

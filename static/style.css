@@ -1,0 +1,669 @@
+/* ==========================================================================
+   Math for the People — stylesheet
+
+   Aesthetic: editorial / well-set book. Warm cream background, classical
+   serif type, deep claret accent. No external font requests — we use
+   high-quality system serifs and let KaTeX handle math typography.
+   ========================================================================== */
+
+:root {
+  /* Type stack: prefer the best serifs that ship with each OS. Iowan and
+     Charter are macOS/iOS gems; Source Serif and Sitka cover Windows;
+     Georgia is the universal fallback. */
+  --font-body: "Iowan Old Style", "Charter", "Source Serif Pro",
+               "Sitka Text", "Palatino", "Georgia", serif;
+  --font-display: var(--font-body);
+  --font-mono: "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+  /* Palette */
+  --bg: #faf6ee;
+  --bg-soft: #f3eee2;
+  --ink: #1c1916;
+  --ink-muted: #6e655c;
+  --rule: #d8d0bf;
+  --accent: #7a1c1c;        /* deep claret, used sparingly */
+  --accent-hover: #5a1414;
+
+  /* Layout */
+  --measure: 38rem;          /* ~640px content column at 18px base */
+  --gutter: 1.5rem;
+}
+
+/* Reset of the things that bite us, not a full normalize. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.65;
+  font-feature-settings: "kern", "liga", "onum";  /* old-style figures */
+  text-rendering: optimizeLegibility;
+}
+@media (min-width: 50rem) {
+  body { font-size: 19px; }
+}
+
+/* --- Layout shell -------------------------------------------------------- */
+
+.site-header,
+main,
+.site-footer {
+  max-width: var(--measure);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+  padding-top: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 2.5rem;
+}
+
+.masthead {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.site-header nav a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+}
+.site-header nav a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.site-footer {
+  margin-top: 5rem;
+  padding-top: 1.25rem;
+  padding-bottom: 3rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.site-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 2px;
+}
+.site-footer a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+/* --- Typography ---------------------------------------------------------- */
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  margin: 2rem 0 0.75rem;
+  font-weight: 600;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.15rem; font-style: italic; font-weight: 500; }
+
+p { margin: 0 0 1rem; }
+
+a {
+  color: var(--accent);
+  text-decoration-color: rgba(122, 28, 28, 0.35);
+  text-underline-offset: 2px;
+}
+a:hover { color: var(--accent-hover); text-decoration-color: currentColor; }
+
+blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--rule);
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg-soft);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+pre {
+  background: var(--bg-soft);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.88em;
+  line-height: 1.55;
+  border-left: 2px solid var(--rule);
+  margin: 1.5rem 0;
+}
+pre code { background: none; padding: 0; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.5rem 0;
+}
+
+/* SVG figures: scale to content width, center, breathe. */
+figure { margin: 2rem 0; text-align: center; }
+figure svg, figure img { max-width: 100%; height: auto; }
+figure figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* --- Index page ---------------------------------------------------------- */
+
+.tagline {
+  font-style: italic;
+  color: var(--ink-muted);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.filter {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1.5rem 0 2rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.75rem;
+}
+.filter button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-family: var(--font-body);
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+.filter button:hover { color: var(--accent); }
+.filter button.active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.post-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.post-list li {
+  border-bottom: 1px solid var(--rule);
+}
+.post-list li:last-child { border-bottom: 0; }
+.post-list a {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 1rem 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.post-list a:hover .post-title { color: var(--accent); }
+.post-title { font-size: 1.1rem; }
+.post-meta {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.post-author--dipshit {
+  font-style: italic;
+}
+.sep { color: var(--rule); margin: 0 0.15em; }
+
+/* --- Post pages ---------------------------------------------------------- */
+
+.post-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+.post-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2.1rem;
+}
+.byline {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+.byline a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule); }
+.byline a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+.warning-tag {
+  font-style: italic;
+  color: var(--accent);
+}
+
+/* Subtle differentiation for Dipshit posts: the byline picks up italic.
+   Resist the urge to do more — the joke lands harder when the layout
+   stays straight-faced. */
+.post--dipshit .byline { font-style: italic; }
+
+.post-content > :first-child { margin-top: 0; }
+
+/* Drop-cap on the first paragraph of every post. Editorial flourish that
+   costs nothing and makes the blog feel composed. Disable on mobile where
+   it crowds the measure. */
+@media (min-width: 40rem) {
+  .post-content > p:first-child::first-letter {
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    font-weight: 600;
+    float: left;
+    line-height: 0.85;
+    margin: 0.1rem 0.5rem 0 -0.1rem;
+    color: var(--accent);
+  }
+}
+
+/* KaTeX integration: keep display equations centered with comfortable air,
+   and prevent inline math from messing with line-height. */
+.katex-display {
+  margin: 1.5rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+.katex { font-size: 1.05em; }
+
+/* Anchored equations: when a post writes
+   $$ ... $$ {#eq:foo}
+   markdown's attr_list extension wraps the surrounding paragraph with
+   id="eq:foo" so [[other-post#eq:foo]] lands here. */
+
+/* --- Backlinks ----------------------------------------------------------- */
+
+.backlinks {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+.backlinks h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  font-style: normal;
+  margin: 0 0 0.75rem;
+}
+.backlinks ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.backlinks li { margin-bottom: 0.25rem; font-size: 0.95rem; }
+
+/* --- Rabbit hole tree --------------------------------------------------- */
+/* Renders the transitive forward-reference graph of a post as a nested
+   list. Vertical guide lines at each level make the depth structure
+   readable without being noisy. Already-seen nodes (deduped against
+   earlier appearances in the same tree) are tagged but not re-expanded. */
+
+.rabbit-hole {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+.rabbit-hole h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  font-style: normal;
+  margin: 0 0 0.5rem;
+}
+.rabbit-hole-intro {
+  font-size: 0.92rem;
+  color: var(--ink-muted);
+  font-style: italic;
+  margin: 0 0 1rem;
+}
+.rabbit-hole-tree,
+.rabbit-hole-tree ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rabbit-hole-tree ul {
+  margin-left: 1rem;
+  padding-left: 0.85rem;
+  border-left: 1px solid var(--rule);
+}
+.rabbit-hole-tree li {
+  margin: 0.4rem 0;
+  font-size: 0.95rem;
+  position: relative;
+}
+/* Small horizontal tick connecting each item to the parent's vertical line. */
+.rabbit-hole-tree ul > li::before {
+  content: "";
+  position: absolute;
+  left: -0.85rem;
+  top: 0.7em;
+  width: 0.6rem;
+  height: 1px;
+  background: var(--rule);
+}
+.rabbit-hole-tree a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+.rabbit-hole-tree a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.rabbit-hole-seen {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  font-style: italic;
+  margin-left: 0.4rem;
+}
+
+/* --- Author pages -------------------------------------------------------- */
+
+.author-bio {
+  font-size: 1.05rem;
+  color: var(--ink-muted);
+  margin: 1rem 0 2rem;
+  font-style: italic;
+}
+.author-bio a { color: var(--accent); }
+.rss-link {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+.empty { color: var(--ink-muted); font-style: italic; }
+
+/* --- Drafts ------------------------------------------------------------- */
+/* Drafts only render in dev mode, so these styles are mostly defensive.
+   The goal is to make it impossible to mistake a draft for a published
+   post when scanning the index or reading the post itself. */
+
+.draft-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  background: #fff5d4;
+  border-left: 3px solid #c98a00;
+  font-size: 0.9rem;
+  color: #5a3a00;
+  font-style: italic;
+}
+.draft-banner strong { font-style: normal; }
+.draft-banner code {
+  background: rgba(0, 0, 0, 0.06);
+  font-style: normal;
+}
+
+.draft-tag {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  background: #c98a00;
+  color: #faf6ee;
+  font-size: 0.7em;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  vertical-align: 0.15em;
+  margin-left: 0.4em;
+}
+
+.post-list li.is-draft .post-title {
+  color: var(--ink-muted);
+}
+
+/* --- 404 page ----------------------------------------------------------- */
+
+.not-found h1 {
+  margin-top: 1rem;
+  font-size: 2rem;
+}
+.not-found p {
+  color: var(--ink-muted);
+  font-size: 1.05rem;
+}
+.not-found-links {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.not-found-links li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.not-found-links li:last-child { border-bottom: 0; }
+
+/* --- Print: the closest thing to a stripped-down book ------------------- */
+@media print {
+  body { background: white; color: black; font-size: 11pt; }
+  .site-header nav, .filter, .backlinks, .rabbit-hole, .background,
+  .site-footer, .popover { display: none; }
+  a { color: black; text-decoration: none; }
+  .post-content > p:first-child::first-letter { color: black; }
+}
+
+/* --- Glossary references and equation references ----------------------- */
+/* Inline triggers in post bodies: subtle dotted underline so a reader can
+   tell at a glance which links are "definitions you can preview" vs
+   ordinary navigation. Resist the urge to make them flashy — they should
+   feel like editorial annotations, not buttons. */
+
+.glossary-ref,
+.equation-ref {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ink-muted);
+  cursor: help;
+  transition: color 120ms, border-color 120ms;
+}
+.glossary-ref:hover,
+.glossary-ref:focus,
+.equation-ref:hover,
+.equation-ref:focus {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  border-bottom-style: solid;
+  outline: none;
+}
+
+/* Small marker so equation refs feel different from term refs without
+   being noisy. The ¶-like glyph nods to mathematical paragraph numbering. */
+.equation-ref::before {
+  content: "§ ";
+  color: var(--ink-muted);
+  font-size: 0.85em;
+  margin-right: 0.05em;
+}
+.equation-ref:hover::before { color: var(--accent); }
+
+/* --- "Concepts used" bar at the top of each post ----------------------- */
+
+.background {
+  margin: 1.5rem 0 2rem;
+  padding: 0.75rem 0 0.85rem;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: baseline;
+}
+.background-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.background-terms { font-style: italic; }
+.background-term {
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* --- Popover (shared element used by glossary + equation refs) --------- */
+
+.popover {
+  position: absolute;
+  z-index: 1000;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.85rem 1rem 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.10);
+  width: max-content;
+  max-width: 380px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 120ms, transform 120ms;
+}
+.popover.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.popover-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.popover-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  line-height: 1.25;
+}
+.popover-body {
+  font-style: italic;
+  color: var(--ink);
+}
+.popover-body p { margin: 0; }
+.popover-body code {
+  font-style: normal;
+  font-size: 0.85em;
+}
+.popover-equation {
+  margin: 0.25rem 0;
+  /* Display math inside a popover sometimes overflows on mobile. Allow
+     horizontal scroll inside the popover rather than letting the popover
+     grow off-screen. */
+  overflow-x: auto;
+  max-width: 100%;
+}
+.popover-equation .katex-display {
+  margin: 0.25rem 0 !important;
+  padding: 0;
+}
+.popover-source {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+.popover-source a { color: var(--accent); }
+
+/* --- Glossary index page ----------------------------------------------- */
+
+.glossary-page h1 { margin-bottom: 0.5rem; }
+.glossary-page .tagline {
+  font-size: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.glossary-list {
+  margin: 0;
+  padding: 0;
+}
+.glossary-entry {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--rule);
+}
+.glossary-entry:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+/* Highlight the entry the URL hash points at, briefly. */
+.glossary-entry:target {
+  background: var(--bg-soft);
+  margin: 0 -1rem;
+  padding: 1.25rem 1rem;
+}
+
+.glossary-entry dt {
+  font-family: var(--font-display);
+  margin: 0 0 0.5rem;
+}
+.term-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.term-aliases {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  font-style: italic;
+  font-weight: normal;
+  margin-left: 0.5rem;
+}
+.term-aliases code { font-style: normal; }
+
+.glossary-entry dd { margin: 0; }
+.term-definition { margin-bottom: 0.5rem; }
+.term-meta {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.term-meta a { color: inherit; }
+.term-meta a:hover { color: var(--accent); }

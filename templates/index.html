@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="index">
+  <p class="tagline">{{ site.tagline }}</p>
+
+  <div class="filter" role="tablist" aria-label="Filter posts by author">
+    <button data-filter="all" class="active" aria-selected="true">All</button>
+    <button data-filter="joe" aria-selected="false">Dr. Joe only</button>
+    <button data-filter="dipshit" aria-selected="false">Dr. Dipshit only</button>
+  </div>
+
+  <ul class="post-list">
+    {% for post in posts %}
+    <li data-author="{{ post.author }}"{% if post.is_draft %} class="is-draft"{% endif %}>
+      <a href="/{{ post.slug }}/">
+        <span class="post-title">
+          {{ post.title }}
+          {% if post.is_draft %}<span class="draft-tag">draft</span>{% endif %}
+        </span>
+        <span class="post-meta">
+          <time datetime="{{ post.date }}">{{ post.date_human }}</time>
+          <span class="sep">·</span>
+          <span class="post-author post-author--{{ post.author }}">
+            {{ authors[post.author].short_name }}
+          </span>
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+  // Plain JS, no framework. Toggles visibility of post-list items by
+  // matching the data-author attribute against the clicked filter.
+  document.querySelectorAll('.filter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.filter button').forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+      });
+      document.querySelectorAll('.post-list li').forEach(li => {
+        const show = filter === 'all' || li.dataset.author === filter;
+        li.style.display = show ? '' : 'none';
+      });
+    });
+  });
+</script>
+{% endblock %}

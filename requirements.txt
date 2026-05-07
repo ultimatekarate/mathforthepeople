@@ -1,0 +1,7 @@
+markdown>=3.5
+PyYAML>=6.0
+Jinja2>=3.1
+
+# Development only — for `python serve.py` (live preview while writing).
+# Not used by the GitHub Actions build.
+livereload>=2.6

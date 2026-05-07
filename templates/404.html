@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="not-found">
+  <h1>That page doesn't exist.</h1>
+  <p>
+    It may have been renamed, the URL might be a typo, or the link that
+    sent you here might be stale. None of those are your fault.
+  </p>
+  <p>Some places that do exist:</p>
+  <ul class="not-found-links">
+    <li><a href="/">All posts</a></li>
+    <li><a href="/glossary/">Glossary of terms used across the blog</a></li>
+    <li><a href="/joe/">Posts by Dr. Joe</a></li>
+    <li><a href="/dipshit/">Posts by Dr. Dipshit</a></li>
+  </ul>
+</div>
+{% endblock %}
