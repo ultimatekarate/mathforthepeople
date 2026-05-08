@@ -64,6 +64,26 @@ def test_extract_math_display_takes_priority_over_inline():
     assert val.startswith("$$") and val.endswith("$$")
 
 
+def test_extract_math_skips_tikz_script_blocks():
+    """TikZJax interprets the TeX inside <script type='text/tikz'>; the
+    build-time LaTeX-to-MathML pass must not touch it. Regression for
+    the bug where TikZ axis labels got replaced with literal MathML."""
+    text = (
+        "Inline math $a$ stays.\n"
+        '<script type="text/tikz">\n'
+        "\\begin{tikzpicture}\n"
+        "  \\draw (0,0) node[below] {$x$};\n"
+        "\\end{tikzpicture}\n"
+        "</script>\n"
+        "Another $b$ outside."
+    )
+    out, mapping = build.extract_math(text)
+    # Only the two outside-TikZ math expressions get placeholders.
+    assert len(mapping) == 2
+    # The TikZ block survives verbatim, including its $x$.
+    assert "node[below] {$x$}" in out
+
+
 # =========================================================================
 # Math rendering (latex2mathml)
 # =========================================================================

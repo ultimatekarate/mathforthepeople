@@ -143,9 +143,21 @@ def extract_description(post, fallback=None):
 MATH_PLACEHOLDER = "\x00MATHBLOCK{i}\x00"
 ESCAPED_DOLLAR = "\x01"
 
+# <script type="text/tikz">...</script> blocks contain raw TeX that the
+# browser's TikZJax interprets at runtime. Their $...$ is for TikZ, not
+# for our LaTeX→MathML pass — extract_math must leave them alone.
+TIKZ_BLOCK_RE = re.compile(
+    r'<script\s+type="text/tikz">[\s\S]*?</script>',
+    re.IGNORECASE,
+)
+
 
 def extract_math(text: str):
-    """Replace $$...$$ and $...$ with placeholders. Return (text, mapping)."""
+    """Replace $$...$$ and $...$ with placeholders. Return (text, mapping).
+
+    TikZ script blocks are passed through untouched — their math is for
+    the browser's TikZJax, not for our build-time MathML rendering.
+    """
     # Honor escaped dollars: \$ becomes a sentinel we restore at the end.
     text = text.replace(r"\$", ESCAPED_DOLLAR)
 
@@ -160,16 +172,28 @@ def extract_math(text: str):
         placeholders[key] = f"{delim}{match.group(1)}{delim}"
         return key
 
-    # Display math first so $$...$$ isn't shredded by the inline pattern.
-    text = re.sub(r"\$\$([\s\S]+?)\$\$", lambda m: stash(m, True), text)
-    # Inline math: require non-space adjacent to delimiters so "$10 vs $20"
-    # in prose is left alone. Newlines also break inline math.
-    text = re.sub(
-        r"\$(?!\s)([^$\n]+?)(?<!\s)\$",
-        lambda m: stash(m, False),
-        text,
-    )
-    return text, placeholders
+    def process(chunk: str) -> str:
+        # Display math first so $$...$$ isn't shredded by the inline pattern.
+        chunk = re.sub(r"\$\$([\s\S]+?)\$\$", lambda m: stash(m, True), chunk)
+        # Inline math: require non-space adjacent to delimiters so "$10 vs $20"
+        # in prose is left alone. Newlines also break inline math.
+        chunk = re.sub(
+            r"\$(?!\s)([^$\n]+?)(?<!\s)\$",
+            lambda m: stash(m, False),
+            chunk,
+        )
+        return chunk
+
+    # Walk the text, preserving TikZ blocks verbatim and processing the
+    # rest through the math regex.
+    out = []
+    last = 0
+    for m in TIKZ_BLOCK_RE.finditer(text):
+        out.append(process(text[last:m.start()]))
+        out.append(m.group(0))
+        last = m.end()
+    out.append(process(text[last:]))
+    return "".join(out), placeholders
 
 
 def restore_math(html: str, placeholders: dict) -> str:

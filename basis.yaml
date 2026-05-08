@@ -48,7 +48,7 @@ layers:
       - yaml          # frontmatter, authors, glossary
       - markdown      # post body rendering
       - jinja2        # templates
-      - latex2mathml  # server-side LaTeX → MathML
+      - latex2mathml  # server-side LaTeX -> MathML
       - livereload    # dev server only (serve.py)
 
 # ── Values ─────────────────────────────────────────────────────────────
