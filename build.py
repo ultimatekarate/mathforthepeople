@@ -43,6 +43,7 @@ TEMPLATES_DIR = ROOT / "templates"
 STATIC_DIR = ROOT / "static"
 AUTHORS_DIR = ROOT / "authors"
 GLOSSARY_DIR = ROOT / "glossary"
+NOTATION_DIR = ROOT / "notation"
 DIST_DIR = ROOT / "dist"
 
 SITE_CONFIG_PATH = ROOT / "site.yaml"
@@ -426,6 +427,37 @@ def load_glossary():
     return entries, alias_map
 
 
+def load_notation():
+    """Load notation entries: typesetting conventions used across the
+    blog. Each entry has a sample (rendered to MathML at build time),
+    a latex_pattern (the command authors should use in posts), and a
+    description that goes through the same math pipeline as glossary
+    definitions.
+    """
+    entries = []
+    if not NOTATION_DIR.exists():
+        return entries
+    for path in sorted(NOTATION_DIR.glob("*.yaml")):
+        with path.open(encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        for field in ("name", "plural", "description"):
+            if field not in data:
+                raise BuildError(
+                    f"notation/{path.name}: missing required field '{field}'"
+                )
+        
+        text, math_map = extract_math(data["description"])
+        rendered = markdown.markdown(text).strip()
+        rendered = render_math(rendered, math_map,
+                               source_name=f"notation/{path.name}")
+        data["description_html"] = rendered
+        data["sort_order"] = data.get("sort_order", 999)
+        data["id"] = path.stem
+        entries.append(data)
+    entries.sort(key=lambda e: (e["sort_order"], e["name"]))
+    return entries
+
+
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n(.*)$", re.DOTALL)
 
 
@@ -643,7 +675,12 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
 
     authors = load_authors()
     glossary, alias_map = load_glossary()
+    notation = load_notation()
     posts = load_posts()
+    # Capture the full slug set (drafts included) before filtering, so
+    # the glossary validation below can distinguish "broken reference"
+    # from "defining post is a draft we're not building right now."
+    all_post_slugs = {p["slug"] for p in posts}
 
     # Drafts: hidden in production, surfaced in dev (serve.py passes
     # include_drafts=True). Filtering happens before any other validation
@@ -661,15 +698,23 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
                 f"Known authors: {sorted(authors)}"
             )
 
-    # Validate glossary 'defined_in' fields point to real posts.
+    # Validate glossary 'defined_in' fields. A typo'd slug still fails
+    # the build loudly. But if defined_in points at a real post that's
+    # currently a draft (and drafts aren't included), drop the link
+    # rather than fail — the term still appears, it just lacks the
+    # "see the post" pointer until the draft promotes.
     post_slugs = {p["slug"] for p in posts}
     for term_id, entry in glossary.items():
         defined_in = entry.get("defined_in")
-        if defined_in and defined_in not in post_slugs:
+        if not defined_in:
+            continue
+        if defined_in not in all_post_slugs:
             raise BuildError(
                 f"glossary/{term_id}.yaml: defined_in '{defined_in}' "
                 f"is not a real post slug"
             )
+        if defined_in not in post_slugs:
+            entry["defined_in"] = None
 
     # Registry for wikilink resolution: slug -> info needed by the resolver,
     # including the equation table extracted at parse time.
@@ -827,6 +872,21 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
                     path="/glossary/",
                 ),
                 entries=glossary_entries,
+            ),
+        )
+
+    # Notation page: typesetting conventions for matrices, sets, etc.
+    if notation:
+        notation_template = env.get_template("notation.html")
+        write(
+            dist_dir / "notation" / "index.html",
+            notation_template.render(
+                page=make_page(
+                    "Notation",
+                    description="Typesetting conventions used across the blog.",
+                    path="/notation/",
+                ),
+                entries=notation,
             ),
         )
 

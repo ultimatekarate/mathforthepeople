@@ -226,6 +226,33 @@ relevant lines in `templates/base.html`.
 Just paste raw `<svg>` markup into a Markdown file. Markdown leaves HTML
 alone, so the SVG renders as-is.
 
+## Notation
+
+`notation/` holds the typesetting conventions used across the blog
+(matrices, sets, operators, function spaces, etc.). Each YAML file is
+one category with a sample LaTeX expression, a pattern reminder, and a
+description:
+
+```yaml
+# notation/matrix.yaml
+name: matrix
+plural: Matrices
+sort_order: 3
+sample: "\\mathsf{A}"
+latex_pattern: "\\mathsf{A}"
+description: |
+  Capital sans-serif letters. Use `\mathsf{...}` in math expressions —
+  $\mathsf{A}$, $\mathsf{M}$, $\mathsf{P}$.
+```
+
+`build.py` renders the sample to MathML at build time (so the visual
+shape of the typeface is on the page) and runs the description through
+the same math pipeline as glossary entries. The notation page itself is
+generated at `/notation/` and linked from the site nav.
+
+`sort_order` controls the display order. Add a new category by dropping
+in another YAML file.
+
 ## Authors
 
 Each post's `author:` field must match a YAML file in `authors/`. Add more

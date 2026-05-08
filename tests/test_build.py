@@ -473,6 +473,7 @@ def patched_build(tmp_path, monkeypatch):
     monkeypatch.setattr(build, "POSTS_DIR", tmp_path / "posts")
     monkeypatch.setattr(build, "AUTHORS_DIR", tmp_path / "authors")
     monkeypatch.setattr(build, "GLOSSARY_DIR", tmp_path / "glossary")
+    monkeypatch.setattr(build, "NOTATION_DIR", tmp_path / "notation")
     monkeypatch.setattr(build, "STATIC_DIR", tmp_path / "static")
     monkeypatch.setattr(build, "DIST_DIR", tmp_path / "dist")
     monkeypatch.setattr(build, "TEMPLATES_DIR", REAL_TEMPLATES)
@@ -545,6 +546,46 @@ def test_full_build_fails_on_unknown_author(patched_build):
         build.build()
 
 
+def test_full_build_handles_glossary_defined_in_a_draft(patched_build):
+    """A glossary term whose defining post is a draft should not break
+    the production build — the term still appears in the glossary, it
+    just lacks the 'see the post' link until the draft is promoted."""
+    _write_minimal_site(patched_build)
+    (patched_build / "posts" / "future.md").write_text(dedent("""\
+        ---
+        title: Future Post
+        author: joe
+        date: 2026-05-01
+        draft: true
+        ---
+
+        Body.
+    """), encoding="utf-8")
+    (patched_build / "glossary" / "future-thing.yaml").write_text(dedent("""\
+        name: future thing
+        defined_in: future
+        short_definition: Something we'll explain later.
+    """), encoding="utf-8")
+    # Production build: drafts excluded, no exception.
+    build.build()
+    glossary_html = (patched_build / "dist" / "glossary" / "index.html").read_text(encoding="utf-8")
+    assert "future thing" in glossary_html
+    # The "defined in" link to the draft is dropped.
+    assert 'href="/future/"' not in glossary_html
+
+
+def test_full_build_still_fails_on_typoed_defined_in(patched_build):
+    """The graceful-draft handling must not mask a real broken slug."""
+    _write_minimal_site(patched_build)
+    (patched_build / "glossary" / "broken.yaml").write_text(dedent("""\
+        name: broken
+        defined_in: nonexistent-post
+        short_definition: Bad slug.
+    """), encoding="utf-8")
+    with pytest.raises(build.BuildError, match="not a real post slug"):
+        build.build()
+
+
 def test_full_build_fails_on_broken_glossary_term(patched_build):
     _write_minimal_site(patched_build)
     (patched_build / "posts" / "bad-glossary.md").write_text(dedent("""\
@@ -589,3 +630,78 @@ def test_load_glossary_renders_math_in_definitions(patched_build):
     assert "<math" in defn
     assert "$\\lim" not in defn
     assert "$L$" not in defn
+
+
+def test_load_notation_renders_description(patched_build):
+    """Notation descriptions go through the same math pipeline as glossary."""
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "matrix.yaml").write_text(dedent("""\
+        name: matrix
+        plural: Matrices
+        sort_order: 1
+        description: |
+          Capital sans-serif letters: $\\mathsf{A}$, $\\mathsf{M}$.
+    """), encoding="utf-8")
+    entries = build.load_notation()
+    assert len(entries) == 1
+    entry = entries[0]
+    assert entry["name"] == "matrix"
+    assert entry["id"] == "matrix"
+    # Description's inline math becomes inline MathML; raw LaTeX is gone.
+    assert "<math" in entry["description_html"]
+    assert "$\\mathsf" not in entry["description_html"]
+
+
+def test_load_notation_orders_by_sort_order(patched_build):
+    """Multiple entries: sort_order determines display order."""
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "second.yaml").write_text(dedent("""\
+        name: second
+        plural: Seconds
+        sort_order: 2
+        description: ignore me
+    """), encoding="utf-8")
+    (patched_build / "notation" / "first.yaml").write_text(dedent("""\
+        name: first
+        plural: Firsts
+        sort_order: 1
+        description: ignore me
+    """), encoding="utf-8")
+    entries = build.load_notation()
+    assert [e["name"] for e in entries] == ["first", "second"]
+
+
+def test_load_notation_returns_empty_when_dir_absent(patched_build):
+    # No notation/ directory: entries are empty, no error raised.
+    assert build.load_notation() == []
+
+
+def test_load_notation_raises_on_missing_field(patched_build):
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "broken.yaml").write_text(
+        'name: broken\nplural: Broken\nsample: "x"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(build.BuildError, match="missing required field 'description'"):
+        build.load_notation()
+
+
+def test_full_build_generates_notation_page(patched_build):
+    _write_minimal_site(patched_build)
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "set.yaml").write_text(dedent("""\
+        name: set
+        plural: Sets
+        sort_order: 1
+        description: |
+          Capital blackboard-bold letters: $\\mathbb{R}$, $\\mathbb{N}$.
+    """), encoding="utf-8")
+    build.build()
+    page = patched_build / "dist" / "notation" / "index.html"
+    assert page.exists()
+    html = page.read_text(encoding="utf-8")
+    assert "Sets" in html
+    # Description math renders to MathML.
+    assert "<math" in html
+    # The "Pattern: ..." line was removed from the page.
+    assert "Pattern:" not in html

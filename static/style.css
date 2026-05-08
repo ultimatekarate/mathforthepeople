@@ -663,3 +663,39 @@ figure figcaption {
 }
 .term-meta a { color: inherit; }
 .term-meta a:hover { color: var(--accent); }
+
+/* --- Notation page ----------------------------------------------------- */
+
+.page-intro {
+  font-size: 1rem;
+  color: var(--ink-muted);
+  margin-bottom: 2rem;
+}
+
+.notation-entry {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--rule);
+}
+.notation-entry:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+.notation-entry:target {
+  background: var(--bg-soft);
+  margin: 0 -1rem;
+  padding: 1.5rem 1rem;
+}
+.notation-entry h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+/* The sample math sits prominently next to the heading row, scaled up
+   so the typeface (sans-serif vs script vs blackboard-bold) reads at
+   a glance. */
+.notation-sample {
+  font-size: 2rem;
+  margin: 0.5rem 0 0.75rem;
+  text-align: center;
+}
+.notation-description {
+  margin: 0;
+}
