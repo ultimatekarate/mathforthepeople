@@ -47,24 +47,14 @@
   }
 
   function buildEquationContent(trigger) {
-    var math = trigger.dataset.equation || "";
+    // data-equation already contains MathML rendered server-side by
+    // build.py (latex2mathml). The browser unescapes the attribute on
+    // read, so we get a real MathML string we can drop into innerHTML.
+    var mathml = trigger.dataset.equation || "";
     var sourceTitle = trigger.dataset.sourceTitle || "";
-    var rendered;
-    try {
-      if (window.katex) {
-        rendered = window.katex.renderToString(math, {
-          displayMode: true,
-          throwOnError: false,
-        });
-      } else {
-        rendered = '<code>' + escapeHtml("$$ " + math + " $$") + '</code>';
-      }
-    } catch (e) {
-      rendered = '<code>' + escapeHtml(math) + '</code>';
-    }
     var html =
       '<div class="popover-kind">equation</div>' +
-      '<div class="popover-equation">' + rendered + '</div>';
+      '<div class="popover-equation">' + mathml + '</div>';
     if (sourceTitle) {
       html +=
         '<div class="popover-source">From “' +

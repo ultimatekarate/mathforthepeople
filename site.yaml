@@ -1,0 +1,18 @@
+# Site configuration. Read once per build; missing keys fall back to the
+# defaults in build.py (DEFAULT_CONFIG). Delete this file to use defaults
+# for everything.
+
+title: "Math for the People"
+tagline: "Honest mathematics, in plain English."
+url: "https://example.com"  # update after pointing your domain
+description: "A stripped-down blog about mathematics by Dr. Joe."
+
+# Build behavior — uncomment to override the defaults.
+# max_rabbit_hole_depth: 3
+# markdown_extensions:
+#   - fenced_code
+#   - tables
+#   - smarty
+#   - footnotes
+#   - toc
+#   - attr_list

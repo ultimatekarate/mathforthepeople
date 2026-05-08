@@ -14,6 +14,7 @@ import json
 import re
 import shutil
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from html import escape as html_escape
@@ -32,6 +33,7 @@ for _stream in (sys.stdout, sys.stderr):
 import yaml
 import markdown
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from latex2mathml.converter import convert as latex_to_mathml
 
 # --- Config ----------------------------------------------------------------
 
@@ -43,16 +45,45 @@ AUTHORS_DIR = ROOT / "authors"
 GLOSSARY_DIR = ROOT / "glossary"
 DIST_DIR = ROOT / "dist"
 
-SITE = {
+SITE_CONFIG_PATH = ROOT / "site.yaml"
+
+# Defaults used when site.yaml is missing or omits a key. The defaults
+# match the existing site so deleting site.yaml doesn't change output.
+DEFAULT_CONFIG = {
     "title": "Math for the People",
-    "tagline": "Honest mathematics, occasionally interrupted by Dr. Dipshit.",
-    "url": "https://example.com",  # update after pointing your domain
+    "tagline": "Honest mathematics, in plain English.",
+    "url": "https://example.com",
     "description": "A stripped-down blog about mathematics by Dr. Joe.",
+    "max_rabbit_hole_depth": 3,
+    "markdown_extensions": [
+        "fenced_code", "tables", "smarty", "footnotes", "toc", "attr_list",
+    ],
 }
+
+
+def load_site_config():
+    """Read site.yaml (if present) on top of DEFAULT_CONFIG."""
+    config = dict(DEFAULT_CONFIG)
+    if SITE_CONFIG_PATH.exists():
+        with SITE_CONFIG_PATH.open(encoding="utf-8") as f:
+            user = yaml.safe_load(f) or {}
+        config.update(user)
+    return config
+
+
+SITE = load_site_config()
 
 
 class BuildError(Exception):
     """Raised when something is wrong with the source content."""
+
+
+@dataclass(frozen=True)
+class BuildStats:
+    """What was written to dist/ during one call to build()."""
+    posts: int
+    authors: int
+    drafts: int
 
 
 # --- Page metadata helpers ------------------------------------------------
@@ -105,8 +136,9 @@ def extract_description(post, fallback=None):
 
 # --- Math preservation -----------------------------------------------------
 # Markdown will mangle $...$ if we let it. We swap math out for placeholders
-# before running the parser, and swap the originals back in afterward. The
-# placeholders are intentionally weird so they survive markdown verbatim.
+# before running the parser. After markdown is done, render_math() puts
+# rendered MathML back where the placeholders are; restore_math() (kept for
+# tests) puts the original LaTeX source back instead.
 
 MATH_PLACEHOLDER = "\x00MATHBLOCK{i}\x00"
 ESCAPED_DOLLAR = "\x01"
@@ -141,8 +173,34 @@ def extract_math(text: str):
 
 
 def restore_math(html: str, placeholders: dict) -> str:
+    """Put the original $...$ / $$...$$ source back. Used by tests."""
     for key, original in placeholders.items():
         html = html.replace(key, original)
+    return html.replace(ESCAPED_DOLLAR, "$")
+
+
+def render_math(html: str, placeholders: dict, source_name: str = "") -> str:
+    """Replace placeholders with MathML rendered server-side via latex2mathml.
+
+    Inline math becomes display="inline"; $$...$$ becomes display="block".
+    A bad LaTeX expression fails the build with a message that names the
+    source file so the author can find it.
+    """
+    for key, original in placeholders.items():
+        if original.startswith("$$") and original.endswith("$$"):
+            tex = original[2:-2].strip()
+            display = "block"
+        else:
+            tex = original[1:-1].strip()
+            display = "inline"
+        try:
+            mathml = latex_to_mathml(tex, display=display)
+        except Exception as exc:
+            where = f" in '{source_name}'" if source_name else ""
+            raise BuildError(
+                f"Could not render LaTeX{where}: '{tex}' — {exc}"
+            ) from exc
+        html = html.replace(key, mathml)
     return html.replace(ESCAPED_DOLLAR, "$")
 
 
@@ -253,9 +311,19 @@ def resolve_wikilinks(
                     f"<div id=\"{anchor}\" class=\"equation\">...$$...$$...</div>"
                 )
             math = equations[anchor]
+            try:
+                math_html = latex_to_mathml(math, display="block")
+            except Exception as exc:
+                raise BuildError(
+                    f"Could not render equation '{anchor}' in '{slug}.md' "
+                    f"(referenced from '{current_slug}.md'): '{math}' — {exc}"
+                ) from exc
+            # MathML goes into data-equation as escaped attribute text;
+            # popovers.js reads it back via dataset and assigns it to
+            # innerHTML, where it parses as live MathML again.
             return (
                 f'<a href="{url}" class="equation-ref" '
-                f'data-equation="{html_escape(math)}" '
+                f'data-equation="{html_escape(math_html)}" '
                 f'data-source-title="{html_escape(target_post["title"])}">'
                 f'{html_escape(text_out)}</a>'
             )
@@ -271,7 +339,7 @@ def resolve_wikilinks(
 def load_authors() -> dict:
     authors = {}
     for path in sorted(AUTHORS_DIR.glob("*.yaml")):
-        with path.open() as f:
+        with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
         key = path.stem
         # Render the bio's markdown so author pages can use it as HTML.
@@ -285,8 +353,14 @@ def load_authors() -> dict:
 def load_glossary():
     """Load glossary entries. Returns (entries, alias_map).
 
-    entries: {canonical_id: {name, short_definition, definition_html,
-                             defined_in?, aliases?, id}}
+    entries: {
+        canonical_id: {name, 
+            short_definition, 
+            definition_html,
+            defined_in?, 
+            aliases?, 
+            id}
+        }
     alias_map: {any_id_or_alias: canonical_id}
     """
     entries = {}
@@ -295,7 +369,7 @@ def load_glossary():
         return entries, alias_map
 
     for path in sorted(GLOSSARY_DIR.glob("*.yaml")):
-        with path.open() as f:
+        with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
         term_id = path.stem
         for field in ("name", "short_definition"):
@@ -304,9 +378,13 @@ def load_glossary():
                     f"glossary/{path.name}: missing required field '{field}'"
                 )
         # Render the definition as inline-ish markdown. Allows links,
-        # italics, code, but we strip the wrapping <p> for cleaner display
-        # in popovers.
-        rendered = markdown.markdown(data["short_definition"]).strip()
+        # italics, code, plus LaTeX math via the same extract → markdown →
+        # render_math pipeline used for post bodies. Strip the wrapping
+        # <p> for cleaner display in popovers.
+        text, math_map = extract_math(data["short_definition"])
+        rendered = markdown.markdown(text).strip()
+        rendered = render_math(rendered, math_map,
+                               source_name=f"glossary/{path.name}")
         if rendered.startswith("<p>") and rendered.endswith("</p>") and \
                 rendered.count("<p>") == 1:
             rendered = rendered[3:-4]
@@ -372,8 +450,9 @@ def load_posts() -> list:
 def make_markdown_parser():
     # Standard library Markdown with extensions for fenced code, tables,
     # smart typography, footnotes, and heading IDs (so anchors work).
+    # Extension list is configurable via site.yaml.
     return markdown.Markdown(
-        extensions=["fenced_code", "tables", "smarty", "footnotes", "toc", "attr_list"],
+        extensions=SITE["markdown_extensions"],
         extension_configs={"toc": {"permalink": False}},
     )
 
@@ -391,8 +470,9 @@ def render_post_body(post, registry, glossary, alias_map,
     # 3. Run markdown.
     md = make_markdown_parser()
     html = md.convert(body)
-    # 4. Put the math back so KaTeX can typeset it in the browser.
-    html = restore_math(html, math_map)
+    # 4. Render the math to MathML at build time. Browsers handle MathML
+    #    natively — no KaTeX, no CDN, no flash of unstyled math.
+    html = render_math(html, math_map, source_name=post.get("source", post["slug"]))
     return html
 
 
@@ -517,37 +597,25 @@ def build(include_drafts=False):
         shutil.rmtree(staging)
     staging.mkdir()
 
-    # Temporarily redirect output through the staging dir.
-    global DIST_DIR
-    final_dist = DIST_DIR
-    DIST_DIR = staging
     try:
-        _build_into_staging(include_drafts=include_drafts)
+        stats = _build_into_staging(staging, include_drafts=include_drafts)
     except Exception:
         # Leave the previous dist/ untouched and propagate the error.
-        DIST_DIR = final_dist
         shutil.rmtree(staging, ignore_errors=True)
         raise
 
     # Atomic-ish swap. There's a very brief window where dist/ doesn't
     # exist; livereload doesn't care.
-    DIST_DIR = final_dist
-    if final_dist.exists():
-        shutil.rmtree(final_dist)
-    staging.rename(final_dist)
-    summary = f"Built {_post_count[0]} post(s) by {_author_count[0]} author(s)"
-    if _draft_count[0]:
-        summary += f" (including {_draft_count[0]} draft{'s' if _draft_count[0] != 1 else ''})"
-    print(f"{summary} → {final_dist}/")
+    if DIST_DIR.exists():
+        shutil.rmtree(DIST_DIR)
+    staging.rename(DIST_DIR)
+    summary = f"Built {stats.posts} post(s) by {stats.authors} author(s)"
+    if stats.drafts:
+        summary += f" (including {stats.drafts} draft{'s' if stats.drafts != 1 else ''})"
+    print(f"{summary} → {DIST_DIR}/")
 
 
-# Side-channel for the print-after-swap above.
-_post_count = [0]
-_author_count = [0]
-_draft_count = [0]
-
-
-def _build_into_staging(include_drafts=False):
+def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
 
     authors = load_authors()
     glossary, alias_map = load_glossary()
@@ -559,7 +627,7 @@ def _build_into_staging(include_drafts=False):
     drafts = [p for p in posts if p["is_draft"]]
     if not include_drafts:
         posts = [p for p in posts if not p["is_draft"]]
-    _draft_count[0] = len([p for p in posts if p["is_draft"]])
+    drafts_count = len([p for p in posts if p["is_draft"]])
 
     # Validate authors referenced by posts.
     for post in posts:
@@ -677,7 +745,10 @@ def _build_into_staging(include_drafts=False):
             {"slug": s, "title": registry[s]["title"]}
             for s in sorted(link_graph.get(post["slug"], set()))
         ]
-        rabbit_hole = build_rabbit_hole(post["slug"], forward_refs, registry)
+        rabbit_hole = build_rabbit_hole(
+            post["slug"], forward_refs, registry,
+            max_depth=SITE["max_rabbit_hole_depth"],
+        )
         post_description = extract_description(post)
         html = post_template.render(
             page=make_page(
@@ -693,12 +764,12 @@ def _build_into_staging(include_drafts=False):
             rabbit_hole=rabbit_hole,
             rabbit_hole_size=count_unique_in_tree(rabbit_hole),
         )
-        write(DIST_DIR / post["slug"] / "index.html", html)
+        write(dist_dir / post["slug"] / "index.html", html)
 
     # Index page (all posts, with author filter).
     index_template = env.get_template("index.html")
     write(
-        DIST_DIR / "index.html",
+        dist_dir / "index.html",
         index_template.render(
             page=make_page(SITE["title"], description=SITE["tagline"], path="/"),
             posts=posts, authors=authors,
@@ -724,7 +795,7 @@ def _build_into_staging(include_drafts=False):
             })
         glossary_template = env.get_template("glossary.html")
         write(
-            DIST_DIR / "glossary" / "index.html",
+            dist_dir / "glossary" / "index.html",
             glossary_template.render(
                 page=make_page(
                     "Glossary",
@@ -743,7 +814,7 @@ def _build_into_staging(include_drafts=False):
         bio_text = re.sub(r"<[^>]+>", "", author.get("bio_html", ""))
         bio_text = re.sub(r"\s+", " ", bio_text).strip()
         write(
-            DIST_DIR / key / "index.html",
+            dist_dir / key / "index.html",
             author_template.render(
                 page=make_page(
                     author["name"],
@@ -757,7 +828,7 @@ def _build_into_staging(include_drafts=False):
     # 404 page. GitHub Pages serves /404.html for any unmatched URL.
     not_found_template = env.get_template("404.html")
     write(
-        DIST_DIR / "404.html",
+        dist_dir / "404.html",
         not_found_template.render(
             page=make_page(
                 "Not found",
@@ -785,7 +856,7 @@ def _build_into_staging(include_drafts=False):
         env,
         channel={"title": SITE["title"], "link": SITE["url"], "description": SITE["description"]},
         items=rss_items(posts),
-        out=DIST_DIR / "feed.xml",
+        out=dist_dir / "feed.xml",
     )
     for key, author in authors.items():
         author_posts = [p for p in posts if p["author"] == key]
@@ -797,14 +868,14 @@ def _build_into_staging(include_drafts=False):
                 "description": f"Posts by {author['name']}.",
             },
             items=rss_items(author_posts),
-            out=DIST_DIR / key / "feed.xml",
+            out=dist_dir / key / "feed.xml",
         )
 
     # Static assets.
     if STATIC_DIR.exists():
         for src in STATIC_DIR.rglob("*"):
             if src.is_file():
-                dst = DIST_DIR / src.relative_to(STATIC_DIR)
+                dst = dist_dir / src.relative_to(STATIC_DIR)
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
 
@@ -812,13 +883,12 @@ def _build_into_staging(include_drafts=False):
     # gets copied verbatim if present.
     cname = ROOT / "CNAME"
     if cname.exists():
-        shutil.copy2(cname, DIST_DIR / "CNAME")
+        shutil.copy2(cname, dist_dir / "CNAME")
 
     # .nojekyll tells GitHub Pages to skip its own Jekyll build step.
-    (DIST_DIR / ".nojekyll").touch()
+    (dist_dir / ".nojekyll").touch()
 
-    _post_count[0] = len(posts)
-    _author_count[0] = len(authors)
+    return BuildStats(posts=len(posts), authors=len(authors), drafts=drafts_count)
 
 
 if __name__ == "__main__":

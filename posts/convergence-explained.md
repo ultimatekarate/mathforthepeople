@@ -3,6 +3,7 @@ title: What "Converges" Actually Means
 author: joe
 date: 2026-04-18
 slug: convergence-explained
+draft: true
 ---
 
 If you've ever heard a mathematician say a sum or sequence "converges,"

@@ -238,9 +238,6 @@ figure figcaption {
   font-size: 0.9rem;
   white-space: nowrap;
 }
-.post-author--dipshit {
-  font-style: italic;
-}
 .sep { color: var(--rule); margin: 0 0.15em; }
 
 /* --- Post pages ---------------------------------------------------------- */
@@ -261,16 +258,6 @@ figure figcaption {
 }
 .byline a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule); }
 .byline a:hover { color: var(--accent); text-decoration-color: var(--accent); }
-
-.warning-tag {
-  font-style: italic;
-  color: var(--accent);
-}
-
-/* Subtle differentiation for Dipshit posts: the byline picks up italic.
-   Resist the urge to do more — the joke lands harder when the layout
-   stays straight-faced. */
-.post--dipshit .byline { font-style: italic; }
 
 .post-content > :first-child { margin-top: 0; }
 

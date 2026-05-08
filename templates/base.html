@@ -26,27 +26,9 @@
 
   <link rel="stylesheet" href="/style.css">
 
-  {# KaTeX: server-side rendering would be nicer but adds a Node dep.
-     Loading from CDN keeps the build pure-Python. #}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-        integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
-        crossorigin="anonymous">
-  <script defer
-          src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
-          integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg"
-          crossorigin="anonymous"></script>
-  <script defer
-          src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
-          integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMofbpV+t1XHMM5lKO"
-          crossorigin="anonymous"
-          onload="renderMathInElement(document.body, {
-            delimiters: [
-              {left: '$$', right: '$$', display: true},
-              {left: '$',  right: '$',  display: false}
-            ],
-            throwOnError: false
-          });"></script>
+  {# Math is pre-rendered to MathML at build time via latex2mathml. No
+     KaTeX, no CDN, no flash of unstyled math — modern browsers render
+     <math> elements natively. See render_math() in build.py. #}
 
   {# TikZJax: enables raw TikZ inside <script type='text/tikz'>...</script> blocks.
      Optional — comment this out if you don't want the extra ~400KB download. #}
@@ -68,7 +50,6 @@
       <a href="/">Posts</a>
       <a href="/glossary/">Glossary</a>
       <a href="/joe/">Dr. Joe</a>
-      <a href="/dipshit/">Dr. Dipshit</a>
       <a href="/feed.xml">RSS</a>
     </nav>
   </header>

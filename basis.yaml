@@ -1,0 +1,70 @@
+governance:
+  version: "1.0"
+
+# Math for the People is a small Python static-site generator: one build
+# module (build.py) plus a dev server (serve.py), plus tests. The spec
+# is intentionally minimal — fine-grained dictionary/laboratory/hands
+# layering would be premature for ~900 lines of code in two top-level
+# files. What's worth enforcing today: the dependency surface stays
+# small and deliberate.
+#
+# When build.py is eventually split (a `BuildStats` dataclass for build
+# state, a `parse` module for pure helpers, a `render` module for IO),
+# revisit and add internal layers.
+
+layers:
+  build:
+    role: "Static site generator and dev server"
+    packages:
+      - "build.py"
+      - "serve.py"
+    depends_on:
+      - stdlib
+      - third-party
+
+  # ── External layers ─────────────────────────────────────────────────
+  # Imports that don't match any declared external layer pass silently
+  # (opt-in governance). The lists below are not exhaustive — they
+  # describe the intended dependency surface, and adding a new package
+  # is a deliberate edit to this file.
+
+  stdlib:
+    external: true
+    role: "Python standard library"
+    packages:
+      - json
+      - re
+      - shutil
+      - sys
+      - datetime
+      - email
+      - html
+      - pathlib
+
+  third-party:
+    external: true
+    role: "Allowed third-party dependencies"
+    packages:
+      - yaml          # frontmatter, authors, glossary
+      - markdown      # post body rendering
+      - jinja2        # templates
+      - latex2mathml  # server-side LaTeX → MathML
+      - livereload    # dev server only (serve.py)
+
+# ── Values ─────────────────────────────────────────────────────────────
+# No branded newtypes yet. Slug, GlossaryTermId, and EquationLabel are
+# all currently passed as plain strings. The codebase is small enough
+# that the primitive-obsession risk doesn't justify the migration cost
+# yet — but if build.py is split into modules, branding these is the
+# obvious next step (they cross most module boundaries).
+
+# ── Completeness ──────────────────────────────────────────────────────
+# No exhaustive unions yet. The code has no tagged enums; build phases
+# are sequential function calls, not dispatched values.
+
+# ── Purity ─────────────────────────────────────────────────────────────
+# Not declared. Once build.py is decomposed into pure helpers (parse,
+# render, graph algorithms) vs. IO (load, write, orchestrate), the pure
+# half should be marked `purity: strict` with file_io / network_io /
+# stdout forbidden. Today it's all mixed in one file, so a strict
+# declaration would either be useless or fail trivially.
