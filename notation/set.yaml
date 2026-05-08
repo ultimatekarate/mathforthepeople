@@ -1,0 +1,14 @@
+name: set
+plural: Sets
+sort_order: 4
+description: |
+  In general, sets will be denoted by capital bold letters: $\mathbf{A}$. When referring to element of a set we use the corresponding lowercase letter 
+  _e.g._, $a \in \mathbf{A}$. 
+
+  Certain named sets will use blackboard bold: 
+
+  - the natural numbers: $\mathbb{N}$, 
+  - the integers: $\mathbb{Z}$,
+  - the rational numbers: $\mathbb{Q}$, 
+  - the real numbers: $\mathbb{R}$, 
+  - the complex numbers: $\mathbb{C}$.

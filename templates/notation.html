@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Notation</h1>
+
+<p class="page-intro">
+  The typesetting conventions used across the blog.
+</p>
+
+{% for entry in entries %}
+<section class="notation-entry" id="{{ entry.id }}">
+  <h2>{{ entry.plural }}</h2>
+  {% if entry.sample_mathml %}
+  <div class="notation-sample">{{ entry.sample_mathml | safe }}</div>
+  {% endif %}
+  <div class="notation-description">{{ entry.description_html | safe }}</div>
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,7 @@
+name: vector
+plural: Vectors
+sort_order: 2
+sample: "\\vec{v}"
+latex_pattern: "\\vec{v}"
+description: |
+  Lowercase letters with an arrow above — $\vec{v}$, $\vec{u}$, $\vec{x}$.

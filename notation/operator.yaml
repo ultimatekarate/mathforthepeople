@@ -1,0 +1,7 @@
+name: operator
+plural: Operators
+sort_order: 5
+description: |
+  Calligraphic capital letters for operators that
+  act on functions or function spaces — Laplacians, integral kernels,
+  differential operators. $\mathcal{L}$, $\mathcal{D}$, $\mathcal{T}$.

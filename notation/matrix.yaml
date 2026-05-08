@@ -1,0 +1,7 @@
+name: matrix
+plural: Matrices
+sort_order: 3
+description: |
+  Capital sans-serif letters —
+  $\mathsf{A}$, $\mathsf{M}$, $\mathsf{P}$. Inverses and transposes
+  inherit the convention: $\mathsf{M}^{-1}$, $\mathsf{P}^\top$.

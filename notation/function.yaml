@@ -1,0 +1,6 @@
+name: function
+plural: Functions
+sort_order: 1
+latex_pattern: "f"
+description: |
+  Functions are denoted by lowercase italic letters: $f$, $g$, $h$, $x$, $y$, $z$. Independent variables will be dropped when brevity demands it. 

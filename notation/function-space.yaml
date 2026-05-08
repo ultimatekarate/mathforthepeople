@@ -1,0 +1,8 @@
+name: function space
+plural: Function spaces
+sort_order: 6
+latex_pattern: "\\mathscr{H}"
+description: |
+  Capital script letters for function spaces —
+  $\mathscr{H}$ for a Hilbert space, $\mathscr{C}$ for a class of smooth
+  functions, etc.
