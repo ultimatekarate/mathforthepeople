@@ -3,7 +3,7 @@ title: What "Converges" Actually Means
 author: joe
 date: 2026-04-18
 slug: convergence-explained
-draft: true
+draft: false
 ---
 
 If you've ever heard a mathematician say a sum or sequence "converges,"
@@ -43,7 +43,7 @@ partial sums form a sequence that converges in the sense above.
 The walking-distance argument from [[geometric-series]] is the simplest
 case. The partial sums of $1 + 1/2 + 1/4 + \cdots$ are
 
-$$ 1,\ \tfrac{3}{2},\ \tfrac{7}{4},\ \tfrac{15}{8},\ \tfrac{31}{16},\ \ldots $$
+$$ 1,\ \tfrac{3}{2},\ \tfrac{7}{4},\ \tfrac{15}{8},\ \tfrac{31}{16},\ \ldots, \tfrac{2^{n+1}-1}{2^n} $$
 
 Pick any $\varepsilon$ — say, $0.001$. After enough terms, every partial
 sum is within $0.001$ of $2$ and stays there. After a few more, every

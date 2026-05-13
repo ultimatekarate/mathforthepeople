@@ -144,6 +144,57 @@ def extract_description(post, fallback=None):
 MATH_PLACEHOLDER = "\x00MATHBLOCK{i}\x00"
 ESCAPED_DOLLAR = "\x01"
 
+
+def expand_macros(text: str, macros: dict) -> str:
+    """Expand \\name{arg} macros to their LaTeX templates.
+
+    Each entry in `macros` maps a name (e.g., 'mat') to a template
+    string with '#1' as the placeholder for the inner argument —
+    matching the LaTeX `\\newcommand{\\mat}[1]{\\mathsf{#1}}` convention.
+
+    Braces inside the argument are balanced, so `\\mat{\\sigma_{ij}}`
+    expands correctly. Macros nested inside arguments are also
+    expanded recursively.
+
+    Unknown macros are passed through unchanged. Unbalanced braces
+    leave the macro literal in place.
+    """
+    if not macros:
+        return text
+    pattern = re.compile(
+        r"\\(" + "|".join(
+            re.escape(n) for n in sorted(macros, key=len, reverse=True)
+        ) + r")\{"
+    )
+    out = []
+    i = 0
+    n = len(text)
+    while i < n:
+        m = pattern.search(text, i)
+        if not m:
+            out.append(text[i:])
+            break
+        out.append(text[i:m.start()])
+        name = m.group(1)
+        depth = 1
+        j = m.end()
+        while j < n and depth > 0:
+            c = text[j]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+            j += 1
+        if depth != 0:
+            # Unbalanced — leave the macro alone and resume after the '{'.
+            out.append(text[m.start():m.end()])
+            i = m.end()
+            continue
+        arg = expand_macros(text[m.end():j - 1], macros)
+        out.append(macros[name].replace("#1", arg))
+        i = j
+    return "".join(out)
+
 # <script type="text/tikz">...</script> blocks contain raw TeX that the
 # browser's TikZJax interprets at runtime. Their $...$ is for TikZ, not
 # for our LaTeX→MathML pass — extract_math must leave them alone.
@@ -153,12 +204,18 @@ TIKZ_BLOCK_RE = re.compile(
 )
 
 
-def extract_math(text: str):
+def extract_math(text: str, macros: dict | None = None):
     """Replace $$...$$ and $...$ with placeholders. Return (text, mapping).
 
     TikZ script blocks are passed through untouched — their math is for
     the browser's TikZJax, not for our build-time MathML rendering.
+
+    If `macros` is provided, custom \\name{...} shortcuts get expanded
+    inside math content before stashing. This lets posts use semantic
+    shortcuts like \\mat{A} instead of remembering whether matrices
+    are \\mathsf or \\mathbf — see notation/*.yaml.
     """
+    macros = macros or {}
     # Honor escaped dollars: \$ becomes a sentinel we restore at the end.
     text = text.replace(r"\$", ESCAPED_DOLLAR)
 
@@ -170,7 +227,8 @@ def extract_math(text: str):
         counter[0] += 1
         key = MATH_PLACEHOLDER.format(i=i)
         delim = "$$" if display else "$"
-        placeholders[key] = f"{delim}{match.group(1)}{delim}"
+        inner = expand_macros(match.group(1), macros) if macros else match.group(1)
+        placeholders[key] = f"{delim}{inner}{delim}"
         return key
 
     def process(chunk: str) -> str:
@@ -375,19 +433,24 @@ def load_authors() -> dict:
     return authors
 
 
-def load_glossary():
+def load_glossary(macros=None):
     """Load glossary entries. Returns (entries, alias_map).
 
     entries: {
-        canonical_id: {name, 
-            short_definition, 
+        canonical_id: {name,
+            short_definition,
             definition_html,
-            defined_in?, 
-            aliases?, 
+            defined_in?,
+            aliases?,
             id}
         }
     alias_map: {any_id_or_alias: canonical_id}
+
+    If `macros` is provided, the shortcut expansion that runs on post
+    bodies also runs on glossary definitions, so a definition that
+    uses `\\mat{A}` renders the same way the post would.
     """
+    macros = macros or {}
     entries = {}
     alias_map = {}
     if not GLOSSARY_DIR.exists():
@@ -406,7 +469,7 @@ def load_glossary():
         # italics, code, plus LaTeX math via the same extract → markdown →
         # render_math pipeline used for post bodies. Strip the wrapping
         # <p> for cleaner display in popovers.
-        text, math_map = extract_math(data["short_definition"])
+        text, math_map = extract_math(data["short_definition"], macros=macros)
         rendered = markdown.markdown(text).strip()
         rendered = render_math(rendered, math_map,
                                source_name=f"glossary/{path.name}")
@@ -428,15 +491,23 @@ def load_glossary():
 
 
 def load_notation():
-    """Load notation entries: typesetting conventions used across the
-    blog. Each entry has a sample (rendered to MathML at build time),
-    a latex_pattern (the command authors should use in posts), and a
-    description that goes through the same math pipeline as glossary
-    definitions.
+    """Load notation entries and the macro map derived from them.
+
+    Returns (entries, macros). The macro map collects every entry's
+    `shortcut` and `expansion` fields so post bodies and glossary
+    descriptions can use shortcuts like `\\mat{A}` instead of repeating
+    `\\mathsf{A}` everywhere. Entries without a shortcut don't
+    contribute to the macro map (e.g., functions and vectors that use
+    LaTeX-native commands).
+
+    Two-phase load: collect all YAML first to build the macro map,
+    then render descriptions with macros available — so a notation
+    description that demonstrates its own shortcut renders correctly.
     """
-    entries = []
     if not NOTATION_DIR.exists():
-        return entries
+        return [], {}
+
+    raw = []
     for path in sorted(NOTATION_DIR.glob("*.yaml")):
         with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
@@ -445,17 +516,41 @@ def load_notation():
                 raise BuildError(
                     f"notation/{path.name}: missing required field '{field}'"
                 )
-        
-        text, math_map = extract_math(data["description"])
-        rendered = markdown.markdown(text).strip()
-        rendered = render_math(rendered, math_map,
-                               source_name=f"notation/{path.name}")
-        data["description_html"] = rendered
-        data["sort_order"] = data.get("sort_order", 999)
         data["id"] = path.stem
+        data["sort_order"] = data.get("sort_order", 999)
+        raw.append((path, data))
+
+    macros = {}
+    for path, data in raw:
+        shortcut = data.get("shortcut")
+        expansion = data.get("expansion")
+        if shortcut and not expansion:
+            raise BuildError(
+                f"notation/{path.name}: shortcut '{shortcut}' has no expansion"
+            )
+        if expansion and not shortcut:
+            raise BuildError(
+                f"notation/{path.name}: expansion has no shortcut to bind to"
+            )
+        if shortcut:
+            if shortcut in macros:
+                raise BuildError(
+                    f"notation/{path.name}: shortcut '{shortcut}' is already "
+                    f"defined elsewhere in notation/"
+                )
+            macros[shortcut] = expansion
+
+    entries = []
+    for path, data in raw:
+        text, math_map = extract_math(data["description"], macros=macros)
+        rendered = markdown.markdown(text).strip()
+        rendered = render_math(
+            rendered, math_map, source_name=f"notation/{path.name}",
+        )
+        data["description_html"] = rendered
         entries.append(data)
     entries.sort(key=lambda e: (e["sort_order"], e["name"]))
-    return entries
+    return entries, macros
 
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n(.*)$", re.DOTALL)
@@ -514,10 +609,12 @@ def make_markdown_parser():
 
 
 def render_post_body(post, registry, glossary, alias_map,
-                     link_graph, glossary_uses, forward_refs):
+                     link_graph, glossary_uses, forward_refs,
+                     macros=None):
     body = post["body"]
-    # 1. Pull out math so markdown can't touch it.
-    body, math_map = extract_math(body)
+    # 1. Pull out math so markdown can't touch it. Notation shortcuts
+    #    (like \mat{A}) expand to their full LaTeX form during this step.
+    body, math_map = extract_math(body, macros=macros)
     # 2. Resolve [[wikilinks]] and [[?glossary]] and [[slug#eq:foo]].
     body = resolve_wikilinks(
         body, registry, glossary, alias_map,
@@ -674,8 +771,11 @@ def build(include_drafts=False):
 def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
 
     authors = load_authors()
-    glossary, alias_map = load_glossary()
-    notation = load_notation()
+    # Notation must load first: it produces the macro map (`\mat{A}` →
+    # `\mathsf{A}`, etc.) that glossary descriptions and post bodies
+    # both need at extract_math time.
+    notation, macros = load_notation()
+    glossary, alias_map = load_glossary(macros=macros)
     posts = load_posts()
     # Capture the full slug set (drafts included) before filtering, so
     # the glossary validation below can distinguish "broken reference"
@@ -737,6 +837,7 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
         post["html"] = render_post_body(
             post, registry, glossary, alias_map,
             link_graph, glossary_uses, forward_refs,
+            macros=macros,
         )
 
     # Cycle detection on the reference graph. We don't fail the build on

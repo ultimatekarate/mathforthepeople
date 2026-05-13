@@ -642,8 +642,9 @@ def test_load_notation_renders_description(patched_build):
         description: |
           Capital sans-serif letters: $\\mathsf{A}$, $\\mathsf{M}$.
     """), encoding="utf-8")
-    entries = build.load_notation()
+    entries, macros = build.load_notation()
     assert len(entries) == 1
+    assert macros == {}  # no shortcut defined
     entry = entries[0]
     assert entry["name"] == "matrix"
     assert entry["id"] == "matrix"
@@ -667,13 +668,111 @@ def test_load_notation_orders_by_sort_order(patched_build):
         sort_order: 1
         description: ignore me
     """), encoding="utf-8")
-    entries = build.load_notation()
+    entries, _ = build.load_notation()
     assert [e["name"] for e in entries] == ["first", "second"]
 
 
 def test_load_notation_returns_empty_when_dir_absent(patched_build):
-    # No notation/ directory: entries are empty, no error raised.
-    assert build.load_notation() == []
+    # No notation/ directory: entries and macros are both empty.
+    assert build.load_notation() == ([], {})
+
+
+# =========================================================================
+# Macro expansion (\mat{A} -> \mathsf{A}, etc.)
+# =========================================================================
+
+def test_expand_macros_simple_substitution():
+    out = build.expand_macros(r"\mat{A}", {"mat": r"\mathsf{#1}"})
+    assert out == r"\mathsf{A}"
+
+
+def test_expand_macros_balances_nested_braces():
+    """The arg can contain its own braces — \\mat{\\sigma_{ij}} works."""
+    out = build.expand_macros(
+        r"\mat{\sigma_{ij}}",
+        {"mat": r"\mathsf{#1}"},
+    )
+    assert out == r"\mathsf{\sigma_{ij}}"
+
+
+def test_expand_macros_supports_nested_macros():
+    """Macros inside macros expand recursively."""
+    out = build.expand_macros(
+        r"\op{\mat{A}}",
+        {"mat": r"\mathsf{#1}", "op": r"\mathcal{#1}"},
+    )
+    assert out == r"\mathcal{\mathsf{A}}"
+
+
+def test_expand_macros_leaves_unknown_commands_alone():
+    out = build.expand_macros(r"\foo{B}", {"mat": r"\mathsf{#1}"})
+    assert out == r"\foo{B}"
+
+
+def test_expand_macros_passes_through_when_no_macros():
+    out = build.expand_macros(r"\mat{A}", {})
+    assert out == r"\mat{A}"
+
+
+def test_extract_math_expands_macros_inside_math_only():
+    """\\mat{A} inside $...$ expands; outside math it stays literal."""
+    text = r"Outside: \mat{A}. Inside: $\mat{B}$."
+    out, mapping = build.extract_math(text, macros={"mat": r"\mathsf{#1}"})
+    # Outside math: literal preserved.
+    assert r"\mat{A}" in out
+    # Inside math: expanded into the placeholder mapping.
+    assert any(r"\mathsf{B}" in v for v in mapping.values())
+
+
+def test_load_notation_collects_shortcut_expansion_into_macros(patched_build):
+    """Shortcut/expansion fields in notation YAML build the macro map."""
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "matrix.yaml").write_text(dedent("""\
+        name: matrix
+        plural: Matrices
+        sort_order: 1
+        shortcut: mat
+        expansion: "\\\\mathsf{#1}"
+        description: |
+          Capital sans-serif: $\\mat{A}$.
+    """), encoding="utf-8")
+    entries, macros = build.load_notation()
+    assert macros == {"mat": r"\mathsf{#1}"}
+    # Description used \mat{A}; should expand to \mathsf{A} -> MathML.
+    assert "<math" in entries[0]["description_html"]
+    assert "\\mat{A}" not in entries[0]["description_html"]
+
+
+def test_load_notation_rejects_shortcut_without_expansion(patched_build):
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "broken.yaml").write_text(dedent("""\
+        name: broken
+        plural: Broken
+        shortcut: foo
+        description: missing expansion.
+    """), encoding="utf-8")
+    with pytest.raises(build.BuildError, match="has no expansion"):
+        build.load_notation()
+
+
+def test_load_notation_rejects_duplicate_shortcuts(patched_build):
+    (patched_build / "notation").mkdir()
+    (patched_build / "notation" / "a.yaml").write_text(dedent("""\
+        name: a
+        plural: As
+        shortcut: foo
+        expansion: "\\\\mathsf{#1}"
+        description: a.
+    """), encoding="utf-8")
+    (patched_build / "notation" / "b.yaml").write_text(dedent("""\
+        name: b
+        plural: Bs
+        shortcut: foo
+        expansion: "\\\\mathbb{#1}"
+        description: b.
+    """), encoding="utf-8")
+    with pytest.raises(build.BuildError, match="already defined"):
+        build.load_notation()
 
 
 def test_load_notation_raises_on_missing_field(patched_build):

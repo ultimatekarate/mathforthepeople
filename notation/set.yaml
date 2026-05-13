@@ -1,9 +1,11 @@
 name: set
 plural: Sets
 sort_order: 4
+shortcut: set
+expansion: "\\mathbf{#1}"
 description: |
-  In general, sets will be denoted by capital bold letters: $\mathbf{A}$. When referring to element of a set we use the corresponding lowercase letter 
-  _e.g._, $a \in \mathbf{A}$. 
+  In general, sets will be denoted by capital bold letters: $\set{A}$. When referring to element of a set we use the corresponding lowercase letter
+  _e.g._, $a \in \set{A}$.
 
   Certain named sets will use blackboard bold: 
 

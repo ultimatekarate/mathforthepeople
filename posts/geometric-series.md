@@ -3,7 +3,7 @@ title: Why the Geometric Series Adds Up
 author: joe
 date: 2026-04-15
 slug: geometric-series
-draft: true
+draft: false
 ---
 
 Suppose you take a step of length one, then half a step, then a quarter of a
@@ -20,40 +20,56 @@ A *geometric series* is a sum where each term is a fixed multiple of the
 previous one. If the first term is $a$ and the multiplier is $r$, the
 series looks like
 
-$$ a + ar + ar^2 + ar^3 + \cdots $$
+$$ S = a + ar + ar^2 + ar^3 + \cdots $$
 
-Our walking example has $a = 1$ and $r = 1/2$. The condition we'll need
+Now, how do we know that $S$ is finite? Our walking example has $a = 1$ and $r = 1/2$. The condition we'll need
 is that $|r| < 1$ — that is, each term is strictly smaller than the last
 in absolute value. Without that, the terms don't shrink, and a sum of
-non-shrinking terms can't [[?convergence|converge]] to anything.
+non-shrinking terms can't [[?convergence|converge]] to anything. In fact, shrinking terms isn't enough to guarantee convergence.
 
 ## The trick
 
-Let $S$ stand for the sum. Then
+How does one compute an infinite sum in finite time? Well, you use a shortcut. Let $S$ stand for the sum. Then
 
-$$ S = a + ar + ar^2 + ar^3 + \cdots $$
+$$ S_n = \Sigma_{k=0}^n ar^k $$
 
 Now multiply both sides by $r$:
 
-$$ rS = ar + ar^2 + ar^3 + ar^4 + \cdots $$
+$$ rS_n = \Sigma_{k=0}^n ar^{k+1} $$
 
 Subtract the second equation from the first. Almost everything cancels —
-every term on the right of the first equation, except $a$ itself, has a
-twin on the right of the second:
+$$ S_n - rS_n = \Sigma_{k=0}^n ar^k - \Sigma_{k=0}^n ar^{k+1},$$
 
-$$ S - rS = a $$
+by combining sums we have
+$$\Sigma_{k=1}^n \left(ar^k - ar^{k-1}\right) = a - ar^{n+1}.$$
 
 Factor the left side and solve:
 
 <div id="eq:geometric" class="equation">
-
-$$ S = \frac{a}{1 - r} $$
-
+$$ S_n = \frac{a(1-r^{n+1})}{1 - r},$$ 
 </div>
+
+
+since $|r|<1,$ it follows that $r^{n+1} \to 0$ as $n \to \infty$. So $$ S = \frac{a}{1 - r}.$$
+
 
 That's the formula. For our walk, $a = 1$ and $r = 1/2$, so $S = 1/(1-1/2) = 2$.
 The total distance is exactly two steps, no matter how many halvings you
 chain together.
+
+Notice that we're dividing by $1-r$. Remember earlier, the condition that $|r| <1$? Notice that as $r \to 1$ the denominator approaches 0, which implies $S \to \infty$.
+
+## What happens when $|r|>1$?
+
+Suppose, we let $r=2$. Then we get something like this:
+
+<div id="eq:geometric-diverge" class="equation">
+
+$$ S = \frac{a}{1 - 2} = -a = a + a/2 + a/4 + a/8 + \cdots $$
+
+</div>
+
+This is clearly nonsense for $a \neq 0$. If $a>0$, then $-a < 0$. The right hand side $$ a + a/2 + a/4 + a/8+ \cdots $$ is clearly the sum of positive numbers - it has no hope of being negative! The reason why it is nonsense is because the sum _diverges_ for $|r|>1.$ The summation formula we derived only makes sense when the sum _converges_.
 
 ## A picture
 
