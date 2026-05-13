@@ -26,9 +26,9 @@ def safe_rebuild():
     except build_module.BuildError as e:
         # Don't crash the server — just print and keep serving the last
         # good build. The error stays on screen until you fix it.
-        print(f"\n  ✗ Build failed: {e}\n", file=sys.stderr)
+        print(f"\n  Build failed: {e}\n", file=sys.stderr)
     except Exception as e:
-        print(f"\n  ✗ Unexpected error: {e}\n", file=sys.stderr)
+        print(f"\n  Unexpected error: {e}\n", file=sys.stderr)
 
 
 # Initial build so dist/ exists before the server starts.

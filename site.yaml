@@ -3,9 +3,9 @@
 # for everything.
 
 title: "Math for the People"
-tagline: "Honest mathematics, in plain English."
-url: "https://example.com"  # update after pointing your domain
-description: "A stripped-down blog about mathematics by Dr. Joe."
+tagline: "It's math for you."
+url: "https://mathforthepeople.com"  # update after pointing your domain
+description: "A stripped-down blog about mathematics."
 
 # Build behavior — uncomment to override the defaults.
 # max_rabbit_hole_depth: 3
