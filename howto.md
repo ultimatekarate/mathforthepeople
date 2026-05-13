@@ -1,0 +1,311 @@
+## Quick start
+
+```bash
+pip install -r requirements.txt
+python build.py
+# Output is in dist/ — open dist/index.html in a browser.
+```
+
+## Live preview while writing
+
+```bash
+python serve.py
+```
+
+Then open <http://localhost:8000>. Edit any post, template, stylesheet, or
+author file and save — the site rebuilds and the browser refreshes
+automatically. If a build fails (broken wikilink, bad frontmatter), the
+error prints to the terminal and the browser keeps showing the last good
+version until you fix it.
+
+This uses the same `build.py` as production, so what you see in the dev
+server is exactly what'll be deployed: real KaTeX rendering, real
+wikilink resolution, real backlinks, real CSS.
+
+## Writing a post
+
+Drop a Markdown file into `posts/`. The filename (minus `.md`) becomes the
+URL slug unless you override it in the frontmatter.
+
+```markdown
+---
+title: Why the Geometric Series Adds Up
+author: joe              # must match a file in authors/
+date: 2026-04-15
+slug: geometric-series   # optional; defaults to filename
+---
+
+Body in Markdown. Inline math like $E = mc^2$ and display math:
+
+$$ \int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2} $$
+```
+
+### Math
+
+Inline math: `$ ... $`. Display math: `$$ ... $$`. To write a literal
+dollar sign in prose, escape it: `\$`.
+
+KaTeX is loaded from CDN in the page `<head>` and runs at page load — it
+finds the math and typesets it before the user sees a flash. Rendering is
+client-side, which keeps the build pure Python.
+
+### Labeled equations (for cross-referencing)
+
+To make an equation referenceable from another post, wrap it in a `<div>`
+with an `id`:
+
+```markdown
+<div id="eq:geometric" class="equation">
+
+$$ S = \frac{a}{1-r} $$
+
+</div>
+```
+
+Then from another post:
+
+```markdown
+See [[geometric-series#eq:geometric|equation 1]] for the derivation.
+```
+
+### Cross-references between posts
+
+Use double-bracket wikilinks:
+
+| Syntax | Result |
+|---|---|
+| `[[geometric-series]]` | link with the target post's title as text |
+| `[[geometric-series\|the GP post]]` | link with custom text |
+| `[[geometric-series#eq:geometric]]` | link to an anchor inside the post; if the anchor is an equation label, hovering shows the rendered equation in a popover |
+| `[[geometric-series#eq:geometric\|see eq. 1]]` | both |
+| `[[?geometric-series]]` | glossary term lookup; hovering shows the definition in a popover |
+| `[[?geometric-series\|the GP]]` | glossary term with custom display text |
+
+Broken references (referencing a slug, term, or equation label that doesn't
+exist) **fail the build**. This is on purpose — dead references can't ship.
+
+Backlinks are computed automatically. Every post that gets linked to shows
+a "Referenced by" section at the bottom.
+
+### Drafts
+
+To work on a post without publishing it, set `draft: true` in the
+frontmatter:
+
+```markdown
+---
+title: Untangling the Limits of Sequences
+author: joe
+date: 2026-05-01
+draft: true
+---
+```
+
+Drafts are excluded from the production build (the GitHub Actions deploy
+will not publish them) but **included** when you run `python serve.py`,
+so you can preview them locally. Draft posts get a yellow banner on the
+post page, a `DRAFT` tag in the byline, and a `DRAFT` tag on the index
+list — there's no way to mistake one for a published post.
+
+When the post is ready, just delete the `draft: true` line and push.
+
+## Sharing previews (Open Graph)
+
+Every page emits Open Graph and Twitter Card meta tags so when someone
+shares a link in Slack, iMessage, Mastodon, etc., the preview shows the
+post title, a description, and the site name instead of a barren URL.
+
+The description is taken from:
+
+1. A `description:` field in the post's frontmatter, if you wrote one.
+2. Otherwise, the first paragraph of the post, stripped of HTML and
+   truncated at a word boundary.
+
+If you want fine control over how a specific post looks when shared,
+add an explicit `description:` to its frontmatter.
+
+## 404 page
+
+GitHub Pages serves `404.html` at the site root for any unmatched URL.
+The build generates it automatically from `templates/404.html`. Edit
+that template to change what people see when they hit a stale link.
+
+## Glossary
+
+The blog has a shared glossary of named concepts. Every post that uses a
+glossary term gets:
+
+- **Inline popovers**: hovering a `[[?term]]` reference shows the term's
+  short definition without leaving the page. Equation references work the
+  same way — hovering shows the rendered equation, sourced from wherever
+  it was originally written.
+- **A "Concepts used" bar** at the top of the post that lists every
+  glossary term used (excluding terms the post itself defines), with each
+  one linking to where it was introduced. This is the pedagogical anchor:
+  a reader landing cold on a post can see what background concepts they'd
+  benefit from, and decide whether to detour or push on.
+- **A glossary index page** at `/glossary/` listing every term
+  alphabetically, with definition, "introduced in" link, and a reverse
+  index of every post that uses the term.
+
+To add a glossary term, drop a YAML file in `glossary/`. The filename's
+stem is the term's id (what you write inside `[[?...]]`):
+
+```yaml
+# glossary/geometric-series.yaml
+name: geometric series
+defined_in: geometric-series   # optional; the post that introduces this concept
+aliases: [GP]                  # optional alternate ids you can use in [[?...]]
+short_definition: |
+  An infinite sum where each term is a fixed multiple of the previous one,
+  written $a + ar + ar^2 + \cdots$. When $|r| < 1$ the terms shrink fast
+  enough that the whole sum settles on a finite value.
+```
+
+The `short_definition` is rendered as Markdown (so it can include `*italics*`,
+`code`, links, and inline math via `$...$`). The popover renders LaTeX via
+KaTeX, the same engine that handles math in posts.
+
+### The rabbit hole reference graph
+
+Every post automatically gets a "rabbit hole" tree at the bottom showing
+its transitive references — the posts it depends on, the posts those
+depend on, and so on, depth-capped at three levels. This makes the
+pedagogical structure of the blog literal and navigable: a reader landing
+cold on a post can follow the dependency chain back to whatever
+foundation they need.
+
+Two kinds of edges contribute to the graph:
+
+1. **Direct wikilinks**: writing `[[some-post]]` in post A creates an
+   edge A → some-post.
+2. **Glossary-implied references**: writing `[[?term]]` in post A, when
+   the term has `defined_in: some-post`, also creates an edge
+   A → some-post. The reasoning: if you cite a term defined elsewhere,
+   that "elsewhere" is conceptually part of your post's background.
+
+The tree dedups against itself — if a post turns up via multiple paths,
+only the first occurrence is expanded; later ones are tagged "shown above."
+
+**Cycle detection.** If two posts reference each other (or there's a
+longer cycle: A→B→C→A), the build prints a warning to stderr but does
+not fail. Sometimes mutual references are intentional (post A uses post
+B as an example of a concept; post B uses post A as motivation). The
+warning gives you the option to redesign one direction. The rabbit hole
+itself is rendered safely either way — the cycle detection at render
+time skips back-edges so readers don't loop forever.
+
+If you find yourself getting cycle warnings on every build, the usual
+fix is to pick a direction: which post is the prerequisite, and which
+is the application. The post lower in the dependency order should
+reference the post higher in it, but not the other way around.
+
+### TikZ diagrams
+
+Drop raw TikZ inside a `<script type="text/tikz">` block. TikZJax compiles
+it to SVG in the browser:
+
+```html
+<script type="text/tikz">
+\begin{tikzpicture}
+  \draw[->] (-1,0) -- (1,0);
+\end{tikzpicture}
+</script>
+```
+
+The TikZJax bundle is ~400KB. If you don't want it, comment out the
+relevant lines in `templates/base.html`.
+
+### Inline SVG
+
+Just paste raw `<svg>` markup into a Markdown file. Markdown leaves HTML
+alone, so the SVG renders as-is.
+
+## Notation
+
+`notation/` holds the typesetting conventions used across the blog
+(matrices, sets, operators, function spaces, etc.). Each YAML file is
+one category with a description and, optionally, a shortcut/expansion
+pair that defines a custom math macro:
+
+```yaml
+# notation/matrix.yaml
+name: matrix
+plural: Matrices
+sort_order: 3
+shortcut: mat
+expansion: "\\mathsf{#1}"
+description: |
+  Capital sans-serif letters. Write `\mat{A}` in math —
+  $\mat{A}$, $\mat{M}$, $\mat{P}$.
+```
+
+`shortcut` + `expansion` together define a LaTeX-style macro: writing
+`\mat{A}` inside `$...$` math anywhere on the site (posts, glossary
+descriptions, the notation page itself) expands to `\mathsf{A}` at
+build time. The placeholder `#1` follows the LaTeX `\newcommand` shape
+and gets replaced with the macro's argument. Balanced braces inside
+the argument are preserved (`\mat{\sigma_{ij}}` works).
+
+This means the typesetting convention lives in *one* place: change
+`expansion` in the YAML and every `\mat{...}` site-wide updates on
+the next build. Outside of `$...$` math, `\mat{A}` stays as literal
+text — so prose isn't accidentally substituted.
+
+`build.py` runs the description through the same math pipeline as
+glossary entries (so a description that demonstrates its own shortcut
+renders correctly). The notation page itself is generated at
+`/notation/` and linked from the site nav. `sort_order` controls
+display order; add a new category by dropping in another YAML file.
+
+## Authors
+
+Each post's `author:` field must match a YAML file in `authors/`. Add more
+authors by dropping a new YAML file into `authors/` (the filename's stem
+becomes the key you put in frontmatter):
+
+```yaml
+# authors/sandra.yaml
+name: Dr. Sandra
+short_name: Sandra
+bio: |
+  Markdown bio text. Supports [links](/joe/) and `code` and *italics*.
+```
+
+The author's landing page is automatically generated at `/<key>/`, with a
+per-author RSS feed at `/<key>/feed.xml`.
+
+## Customizing the look
+
+Everything visual lives in `static/style.css`. The palette and font stack
+are defined as CSS variables at the top of the file — change those and
+the whole site shifts in lockstep.
+
+Type stack uses high-quality system serifs (Iowan Old Style, Charter,
+Source Serif, Sitka, Georgia). No external font requests. If you want
+a specific webfont, add it in `templates/base.html`.
+
+## Deploying to GitHub Pages
+
+1. Push this repo to GitHub.
+2. In the repo's Settings → Pages, set the source to "GitHub Actions".
+3. Push to `main`. The workflow in `.github/workflows/deploy.yml` builds
+   the site and publishes `dist/`.
+
+### Custom domain
+
+1. Buy a domain at any registrar (Cloudflare, Namecheap, Porkbun…).
+2. Create a file called `CNAME` at the repo root (no extension)
+   containing your domain on a single line, e.g.:
+   ```
+   mathforthepeople.com
+   ```
+3. In Settings → Pages, enter the same domain in the "Custom domain" field.
+4. At your registrar, add DNS records pointing to GitHub:
+   - **Apex** (`mathforthepeople.com`): four A records pointing to
+     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`,
+     `185.199.111.153`.
+   - **www subdomain**: one CNAME record pointing to
+     `<your-username>.github.io`.
+5. Wait for DNS to propagate (minutes to hours).
+6. In Settings → Pages, tick "Enforce HTTPS" once it becomes available.
