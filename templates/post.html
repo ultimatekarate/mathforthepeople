@@ -11,7 +11,7 @@
     {% endif %}
     <h1>{{ post.title }}</h1>
     <p class="byline">
-      by <a href="/{{ post.author }}/">{{ author.name }}</a>
+      by <a href="{{ base_url }}{{ post.author }}/">{{ author.name }}</a>
       <span class="sep">·</span>
       <time datetime="{{ post.date }}">{{ post.date_human }}</time>
       {% if post.is_draft %}
@@ -26,7 +26,7 @@
     <span class="background-label">Concepts used:</span>
     <span class="background-terms">
       {% for term in background %}
-        <a class="glossary-ref background-term" href="/glossary/#{{ term.id }}"
+        <a class="glossary-ref background-term" href="{{ base_url }}glossary/#{{ term.id }}"
            data-term="{{ term.id }}">{{ term.name }}</a>{% if not loop.last %} · {% endif %}
       {% endfor %}
     </span>
@@ -45,7 +45,7 @@
     <ul class="rabbit-hole-tree">
       {% for node in rabbit_hole recursive %}
       <li>
-        <a href="/{{ node.slug }}/">{{ node.title }}</a>
+        <a href="{{ base_url }}{{ node.slug }}/">{{ node.title }}</a>
         {% if node.already_seen %}
           <span class="rabbit-hole-seen">— shown above</span>
         {% endif %}
@@ -63,7 +63,7 @@
     <h2>Referenced by</h2>
     <ul>
       {% for bl in backlinks %}
-      <li><a href="/{{ bl.slug }}/">{{ bl.title }}</a></li>
+      <li><a href="{{ base_url }}{{ bl.slug }}/">{{ bl.title }}</a></li>
       {% endfor %}
     </ul>
   </aside>

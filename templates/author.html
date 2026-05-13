@@ -9,7 +9,7 @@
   <ul class="post-list">
     {% for post in posts %}
     <li>
-      <a href="/{{ post.slug }}/">
+      <a href="{{ base_url }}{{ post.slug }}/">
         <span class="post-title">{{ post.title }}</span>
         <span class="post-meta">
           <time datetime="{{ post.date }}">{{ post.date_human }}</time>
@@ -22,6 +22,6 @@
   <p class="empty">Nothing yet.</p>
   {% endif %}
 
-  <p class="rss-link"><a href="/{{ author_key }}/feed.xml">RSS feed for {{ author.name }}</a></p>
+  <p class="rss-link"><a href="{{ base_url }}{{ author_key }}/feed.xml">RSS feed for {{ author.name }}</a></p>
 </div>
 {% endblock %}

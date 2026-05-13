@@ -22,9 +22,9 @@
   {# Favicon: a simple SVG that scales to any tab size. Edit static/favicon.svg
      to taste. The data: URL fallback is just a transparent square so browsers
      don't request /favicon.ico and 404. #}
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="{{ base_url }}favicon.svg">
 
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="{{ base_url }}style.css">
 
   {# Math is pre-rendered to MathML at build time via latex2mathml. No
      KaTeX, no CDN, no flash of unstyled math — modern browsers render
@@ -36,22 +36,22 @@
   <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
   <link rel="alternate" type="application/rss+xml"
-        title="{{ site.title }}" href="/feed.xml">
+        title="{{ site.title }}" href="{{ base_url }}feed.xml">
 
   {# Glossary data for the popover machinery. Inlined as a JSON blob so
      `popovers.js` can do synchronous lookups by term id. #}
   <script>window.GLOSSARY = {{ glossary_json | safe }};</script>
-  <script defer src="/popovers.js"></script>
+  <script defer src="{{ base_url }}popovers.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <a class="masthead" href="/">{{ site.title }}</a>
+    <a class="masthead" href="{{ base_url }}">{{ site.title }}</a>
     <nav>
-      <a href="/">Posts</a>
-      <a href="/glossary/">Glossary</a>
-      <a href="/notation/">Notation</a>
-      <a href="/joe/">Dr. Joe</a>
-      <a href="/feed.xml">RSS</a>
+      <a href="{{ base_url }}">Posts</a>
+      <a href="{{ base_url }}glossary/">Glossary</a>
+      <a href="{{ base_url }}notation/">Notation</a>
+      <a href="{{ base_url }}joe/">Dr. Joe</a>
+      <a href="{{ base_url }}feed.xml">RSS</a>
     </nav>
   </header>
 
@@ -60,7 +60,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>© {{ year }} · plain HTML, no ads, no tracking · <a href="/feed.xml">RSS</a></p>
+    <p>© {{ year }} · plain HTML, no ads, no tracking · <a href="{{ base_url }}feed.xml">RSS</a></p>
   </footer>
 </body>
 </html>

@@ -5,6 +5,7 @@
 title: "Math for the People"
 tagline: "It's math for you."
 url: "https://mathforthepeople.com"  # update after pointing your domain
+base_url: "/"   # set to "/mathforthepeople/" when deploying without the custom domain
 description: "A stripped-down blog about mathematics."
 
 # Build behavior — uncomment to override the defaults.

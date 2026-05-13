@@ -54,12 +54,26 @@ DEFAULT_CONFIG = {
     "title": "Math for the People",
     "tagline": "Honest mathematics, in plain English.",
     "url": "https://example.com",
+    "base_url": "/",
     "description": "A stripped-down blog about mathematics by Dr. Joe.",
     "max_rabbit_hole_depth": 3,
     "markdown_extensions": [
         "fenced_code", "tables", "smarty", "footnotes", "toc", "attr_list",
     ],
 }
+
+
+def normalize_base_url(value):
+    if not value:
+        return "/"
+    value = value.strip()
+    if not value:
+        return "/"
+    if not value.startswith("/"):
+        value = "/" + value
+    if not value.endswith("/"):
+        value = value + "/"
+    return value
 
 
 def load_site_config():
@@ -73,6 +87,14 @@ def load_site_config():
 
 
 SITE = load_site_config()
+
+# Per-invocation override: `python build.py --base-url=/mathforthepeople/`
+# lets the GitHub Actions workflow (or a local fallback build) produce a
+# differently-rooted site without committing a config change.
+for _arg in sys.argv[1:]:
+    if _arg.startswith("--base-url="):
+        SITE["base_url"] = _arg.split("=", 1)[1]
+SITE["base_url"] = normalize_base_url(SITE.get("base_url"))
 
 
 class BuildError(Exception):
@@ -103,7 +125,7 @@ def make_page(title, description=None, path="/", og_type="website"):
     return {
         "title": full_title,
         "description": description or SITE["description"],
-        "url": SITE["url"].rstrip("/") + path,
+        "url": SITE["url"].rstrip("/") + SITE["base_url"].rstrip("/") + path,
         "og_type": og_type,
     }
 
@@ -353,7 +375,7 @@ def resolve_wikilinks(
             if defined_in and defined_in != current_slug:
                 forward_refs.setdefault(current_slug, set()).add(defined_in)
             return (
-                f'<a href="/glossary/#{canonical}" class="glossary-ref" '
+                f'<a href="{SITE["base_url"]}glossary/#{canonical}" class="glossary-ref" '
                 f'data-term="{canonical}">{display}</a>'
             )
 
@@ -371,7 +393,7 @@ def resolve_wikilinks(
             )
 
         target_post = registry[slug]
-        url = f"/{slug}/"
+        url = f"{SITE['base_url']}{slug}/"
         if anchor:
             url += f"#{anchor}"
         text_out = link_text or target_post["title"]
@@ -623,6 +645,18 @@ def render_post_body(post, registry, glossary, alias_map,
     # 3. Run markdown.
     md = make_markdown_parser()
     html = md.convert(body)
+    # 3a. Rewrite absolute-path hrefs/srcs so they respect base_url. We
+    #     skip URLs that are already base_url-prefixed (the wikilink
+    #     rewriter has already prefixed glossary/post links) and
+    #     protocol-relative `//cdn...` URLs. Full https:// URLs don't
+    #     start with a slash and are left alone.
+    if SITE["base_url"] != "/":
+        _base_prefix = SITE["base_url"].lstrip("/")
+        html = re.sub(
+            r'\b(href|src)="/(?!' + re.escape(_base_prefix) + r')(?!/)([^"]*)"',
+            rf'\1="{SITE["base_url"]}\2"',
+            html,
+        )
     # 4. Render the math to MathML at build time. Browsers handle MathML
     #    natively — no KaTeX, no CDN, no flash of unstyled math.
     html = render_math(html, math_map, source_name=post.get("source", post["slug"]))
@@ -892,6 +926,7 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
         lstrip_blocks=True,
     )
     env.globals["site"] = SITE
+    env.globals["base_url"] = SITE["base_url"]
     env.globals["year"] = datetime.now(timezone.utc).year
 
     # Glossary data exposed to the popover JS as a single JSON blob in
@@ -902,7 +937,7 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
             "name": e["name"],
             "definition_html": e["definition_html"],
             "defined_in": e.get("defined_in"),
-            "defined_in_url": f"/{e['defined_in']}/" if e.get("defined_in") else None,
+            "defined_in_url": f"{SITE['base_url']}{e['defined_in']}/" if e.get("defined_in") else None,
         }
         for tid, e in glossary.items()
     }
@@ -1024,12 +1059,15 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
     )
 
     # RSS feeds: combined and per-author.
+    site_origin = SITE["url"].rstrip("/")
+    site_root = site_origin + SITE["base_url"].rstrip("/") + "/"
+
     def rss_items(post_list):
         return [
             {
                 "title": p["title"],
-                "link": f"{SITE['url']}/{p['slug']}/",
-                "guid": f"{SITE['url']}/{p['slug']}/",
+                "link": f"{site_root}{p['slug']}/",
+                "guid": f"{site_root}{p['slug']}/",
                 "pub_date": format_datetime(p["date_dt"]),
                 "description": p["html"],
                 "author": authors[p["author"]]["name"],
@@ -1039,7 +1077,7 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
 
     render_rss(
         env,
-        channel={"title": SITE["title"], "link": SITE["url"], "description": SITE["description"]},
+        channel={"title": SITE["title"], "link": site_root, "description": SITE["description"]},
         items=rss_items(posts),
         out=dist_dir / "feed.xml",
     )
@@ -1049,7 +1087,7 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
             env,
             channel={
                 "title": f"{SITE['title']} — {author['name']}",
-                "link": f"{SITE['url']}/{key}/",
+                "link": f"{site_root}{key}/",
                 "description": f"Posts by {author['name']}.",
             },
             items=rss_items(author_posts),
@@ -1065,9 +1103,11 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
                 shutil.copy2(src, dst)
 
     # CNAME (for GitHub Pages custom domain) lives at the repo root and
-    # gets copied verbatim if present.
+    # gets copied verbatim if present. Only emit it for custom-domain
+    # builds — when serving from the github.io fallback URL the CNAME
+    # would force a redirect away from where the site actually lives.
     cname = ROOT / "CNAME"
-    if cname.exists():
+    if cname.exists() and SITE["base_url"] == "/":
         shutil.copy2(cname, dist_dir / "CNAME")
 
     # .nojekyll tells GitHub Pages to skip its own Jekyll build step.

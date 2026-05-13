@@ -26,14 +26,14 @@
           {% if entry.defined_in %}
             <span class="meta-line">
               Introduced in:
-              <a href="/{{ entry.defined_in }}/">{{ entry.defined_in_title }}</a>
+              <a href="{{ base_url }}{{ entry.defined_in }}/">{{ entry.defined_in_title }}</a>
             </span>
           {% endif %}
           {% if entry.used_in %}
             <span class="meta-line">
               Used in:
               {% for post in entry.used_in %}
-                <a href="/{{ post.slug }}/">{{ post.title }}</a>{% if not loop.last %}; {% endif %}
+                <a href="{{ base_url }}{{ post.slug }}/">{{ post.title }}</a>{% if not loop.last %}; {% endif %}
               {% endfor %}
             </span>
           {% endif %}

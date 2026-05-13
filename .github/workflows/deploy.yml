@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Which URL the build should target"
+        type: choice
+        options: [custom-domain, github-io-fallback]
+        default: custom-domain
 
 permissions:
   contents: read
@@ -25,7 +31,13 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt -r requirements-dev.txt
       - run: python -m pytest tests/
-      - run: python build.py
+      - name: Build
+        run: |
+          if [ "${{ inputs.target }}" = "github-io-fallback" ]; then
+            python build.py --base-url=/mathforthepeople/
+          else
+            python build.py
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

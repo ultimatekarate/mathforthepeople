@@ -11,7 +11,7 @@
   <ul class="post-list">
     {% for post in posts %}
     <li data-author="{{ post.author }}"{% if post.is_draft %} class="is-draft"{% endif %}>
-      <a href="/{{ post.slug }}/">
+      <a href="{{ base_url }}{{ post.slug }}/">
         <span class="post-title">
           {{ post.title }}
           {% if post.is_draft %}<span class="draft-tag">draft</span>{% endif %}
