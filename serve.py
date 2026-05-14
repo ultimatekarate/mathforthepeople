@@ -1,7 +1,7 @@
 """
 Local dev server with live reload.
 
-Watches posts/, templates/, static/, authors/, and build.py for changes;
+Watches posts/, templates/, static/, about/, and build.py for changes;
 rebuilds the site on every save; auto-refreshes the browser. Build errors
 (broken wikilinks, bad frontmatter) are printed to the terminal and the
 browser keeps showing the last successful build.
@@ -41,7 +41,7 @@ server.watch("posts/*.md", safe_rebuild)
 server.watch("templates/*.html", safe_rebuild)
 server.watch("templates/*.xml", safe_rebuild)
 server.watch("static/**/*", safe_rebuild)
-server.watch("authors/*.yaml", safe_rebuild)
+server.watch("about/*.yaml", safe_rebuild)
 server.watch("build.py", safe_rebuild)
 
 print("\n  Math for the People — dev server")

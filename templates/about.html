@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="about-page">
+  <h1>About</h1>
+  {% for person in people %}
+    <section class="about-bio">
+      {% if people|length > 1 %}<h2>{{ person.name }}</h2>{% endif %}
+      <div class="bio-html">{{ person.bio_html | safe }}</div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

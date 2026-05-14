@@ -424,11 +424,11 @@ def _write_minimal_site(root: Path) -> None:
     rabbit-hole tree.
     """
     (root / "posts").mkdir()
-    (root / "authors").mkdir()
+    (root / "about").mkdir()
     (root / "glossary").mkdir()
     (root / "static").mkdir()
 
-    (root / "authors" / "joe.yaml").write_text(dedent("""\
+    (root / "about" / "joe.yaml").write_text(dedent("""\
         name: Dr. Joe
         short_name: Joe
         bio: A test bio.
@@ -436,14 +436,14 @@ def _write_minimal_site(root: Path) -> None:
 
     (root / "glossary" / "convergence.yaml").write_text(dedent("""\
         name: convergence
-        defined_in: about
+        defined_in: first-post
         short_definition: |
           When something settles down.
     """), encoding="utf-8")
 
-    (root / "posts" / "about.md").write_text(dedent("""\
+    (root / "posts" / "first-post.md").write_text(dedent("""\
         ---
-        title: About
+        title: First Post
         author: joe
         date: 2026-04-01
         ---
@@ -462,7 +462,7 @@ def _write_minimal_site(root: Path) -> None:
         date: 2026-04-15
         ---
 
-        See the [[about|first post]] for background.
+        See the [[first-post|first post]] for background.
     """), encoding="utf-8")
 
 
@@ -471,7 +471,7 @@ def patched_build(tmp_path, monkeypatch):
     """Point build.py's path globals at a fresh tmp_path; reuse real templates."""
     monkeypatch.setattr(build, "ROOT", tmp_path)
     monkeypatch.setattr(build, "POSTS_DIR", tmp_path / "posts")
-    monkeypatch.setattr(build, "AUTHORS_DIR", tmp_path / "authors")
+    monkeypatch.setattr(build, "AUTHORS_DIR", tmp_path / "about")
     monkeypatch.setattr(build, "GLOSSARY_DIR", tmp_path / "glossary")
     monkeypatch.setattr(build, "NOTATION_DIR", tmp_path / "notation")
     monkeypatch.setattr(build, "STATIC_DIR", tmp_path / "static")
@@ -485,11 +485,10 @@ def test_full_build_produces_expected_files(patched_build):
     build.build()
     dist = patched_build / "dist"
     assert (dist / "index.html").exists()
-    assert (dist / "about" / "index.html").exists()
+    assert (dist / "first-post" / "index.html").exists()
     assert (dist / "second" / "index.html").exists()
-    assert (dist / "joe" / "index.html").exists()
+    assert (dist / "about" / "index.html").exists()
     assert (dist / "feed.xml").exists()
-    assert (dist / "joe" / "feed.xml").exists()
     assert (dist / "404.html").exists()
     assert (dist / ".nojekyll").exists()
     assert (dist / "glossary" / "index.html").exists()
@@ -498,7 +497,7 @@ def test_full_build_produces_expected_files(patched_build):
 def test_full_build_renders_math_to_mathml(patched_build):
     _write_minimal_site(patched_build)
     build.build()
-    html = (patched_build / "dist" / "about" / "index.html").read_text(encoding="utf-8")
+    html = (patched_build / "dist" / "first-post" / "index.html").read_text(encoding="utf-8")
     # Math is rendered server-side via latex2mathml. The raw LaTeX
     # source should NOT appear in the output any more — only MathML.
     assert "$x = 1$" not in html
@@ -512,7 +511,7 @@ def test_full_build_renders_wikilink_with_custom_text(patched_build):
     _write_minimal_site(patched_build)
     build.build()
     html = (patched_build / "dist" / "second" / "index.html").read_text(encoding="utf-8")
-    assert 'href="/about/"' in html
+    assert 'href="/first-post/"' in html
     assert "first post" in html
 
 

@@ -20,6 +20,12 @@ from email.utils import format_datetime
 from html import escape as html_escape
 from pathlib import Path
 
+import yaml
+import markdown
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from latex2mathml.converter import convert as latex_to_mathml
+
+
 # Force stdout/stderr to UTF-8 so build messages with arrows, ellipses,
 # etc. don't crash on Windows (which defaults to cp1252). No-op on
 # Linux/macOS, harmless on any wrapped stream that lacks reconfigure().
@@ -30,10 +36,6 @@ for _stream in (sys.stdout, sys.stderr):
         except Exception:
             pass
 
-import yaml
-import markdown
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from latex2mathml.converter import convert as latex_to_mathml
 
 # --- Config ----------------------------------------------------------------
 
@@ -41,7 +43,7 @@ ROOT = Path(__file__).parent
 POSTS_DIR = ROOT / "posts"
 TEMPLATES_DIR = ROOT / "templates"
 STATIC_DIR = ROOT / "static"
-AUTHORS_DIR = ROOT / "authors"
+AUTHORS_DIR = ROOT / "about"
 GLOSSARY_DIR = ROOT / "glossary"
 NOTATION_DIR = ROOT / "notation"
 DIST_DIR = ROOT / "dist"
@@ -134,10 +136,10 @@ def extract_description(post, fallback=None):
     """Pull a short description for og:description / RSS / etc.
 
     Order of preference:
-      1. `description:` field in the post's frontmatter (author wrote one).
-      2. First paragraph of the rendered HTML, stripped of tags and
-         truncated to ~200 characters at a word boundary.
-      3. The provided fallback (usually the site description).
+    1. `description:` field in the post's frontmatter (author wrote one).
+    2. First paragraph of the rendered HTML, stripped of tags and
+    truncated to ~200 characters at a word boundary.
+    3. The provided fallback (usually the site description).
     """
     if post.get("description"):
         return post["description"]
@@ -309,6 +311,28 @@ def render_math(html: str, placeholders: dict, source_name: str = "") -> str:
     return html.replace(ESCAPED_DOLLAR, "$")
 
 
+# --- Text-mode LaTeX symbols ----------------------------------------------
+# A small allowlist of LaTeX commands that should render as their Unicode
+# equivalent when they appear OUTSIDE math mode (i.e., not inside $...$).
+# Run AFTER extract_math so math content is already stashed in placeholders
+# and untouched by this pass.
+#
+# The negative lookahead `(?![a-zA-Z])` prevents \dag from matching the
+# leading characters of \dagger; only standalone command names fire.
+
+TEXT_SYMBOLS = {
+    r"\ddag": "‡",
+    r"\dag": "†",
+}
+
+
+def expand_text_symbols(text: str) -> str:
+    """Replace text-mode LaTeX symbol commands with their Unicode equivalents."""
+    for cmd, sym in TEXT_SYMBOLS.items():
+        text = re.sub(re.escape(cmd) + r"(?![a-zA-Z])", sym, text)
+    return text
+
+
 # --- Wikilinks -------------------------------------------------------------
 # Syntax we support inside posts:
 #   [[slug]]                  -> link with the target post's title as text
@@ -448,10 +472,10 @@ def load_authors() -> dict:
             data = yaml.safe_load(f)
         key = path.stem
         # Render the bio's markdown so author pages can use it as HTML.
-        data["bio_html"] = markdown.markdown(data.get("bio", ""))
+        data["bio_html"] = markdown.markdown(expand_text_symbols(data.get("bio", "")))
         authors[key] = data
     if not authors:
-        raise BuildError("No author files found in authors/")
+        raise BuildError("No bio files found in about/")
     return authors
 
 
@@ -492,6 +516,7 @@ def load_glossary(macros=None):
         # render_math pipeline used for post bodies. Strip the wrapping
         # <p> for cleaner display in popovers.
         text, math_map = extract_math(data["short_definition"], macros=macros)
+        text = expand_text_symbols(text)
         rendered = markdown.markdown(text).strip()
         rendered = render_math(rendered, math_map,
                                source_name=f"glossary/{path.name}")
@@ -565,6 +590,7 @@ def load_notation():
     entries = []
     for path, data in raw:
         text, math_map = extract_math(data["description"], macros=macros)
+        text = expand_text_symbols(text)
         rendered = markdown.markdown(text).strip()
         rendered = render_math(
             rendered, math_map, source_name=f"notation/{path.name}",
@@ -637,6 +663,7 @@ def render_post_body(post, registry, glossary, alias_map,
     # 1. Pull out math so markdown can't touch it. Notation shortcuts
     #    (like \mat{A}) expand to their full LaTeX form during this step.
     body, math_map = extract_math(body, macros=macros)
+    body = expand_text_symbols(body)
     # 2. Resolve [[wikilinks]] and [[?glossary]] and [[slug#eq:foo]].
     body = resolve_wikilinks(
         body, registry, glossary, alias_map,
@@ -873,6 +900,11 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
             link_graph, glossary_uses, forward_refs,
             macros=macros,
         )
+        # Cache a short description per post so the index/listing pages
+        # can show one without each template re-running the regex. Uses
+        # the frontmatter `description:` if present, else the first
+        # paragraph of the rendered HTML, truncated to ~200 chars.
+        post["description"] = extract_description(post)
 
     # Cycle detection on the reference graph. We don't fail the build on
     # cycles — sometimes two posts genuinely refer to each other — but we
@@ -1026,22 +1058,22 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
             ),
         )
 
-    # One landing page per author.
-    author_template = env.get_template("author.html")
-    for key, author in authors.items():
-        author_posts = [p for p in posts if p["author"] == key]
-        # Use first paragraph of bio (plain text) as the OG description.
-        bio_text = re.sub(r"<[^>]+>", "", author.get("bio_html", ""))
+    # Single About page driven by the bio file(s) in about/.
+    if authors:
+        about_template = env.get_template("about.html")
+        people = list(authors.values())
+        # First bio's first paragraph as the OG description for /about/.
+        bio_text = re.sub(r"<[^>]+>", "", people[0].get("bio_html", ""))
         bio_text = re.sub(r"\s+", " ", bio_text).strip()
         write(
-            dist_dir / key / "index.html",
-            author_template.render(
+            dist_dir / "about" / "index.html",
+            about_template.render(
                 page=make_page(
-                    author["name"],
+                    "About",
                     description=bio_text[:200] or SITE["description"],
-                    path=f"/{key}/",
+                    path="/about/",
                 ),
-                author=author, author_key=key, posts=author_posts,
+                people=people,
             ),
         )
 
@@ -1058,41 +1090,26 @@ def _build_into_staging(dist_dir: Path, include_drafts=False) -> BuildStats:
         ),
     )
 
-    # RSS feeds: combined and per-author.
+    # Combined RSS feed.
     site_origin = SITE["url"].rstrip("/")
     site_root = site_origin + SITE["base_url"].rstrip("/") + "/"
-
-    def rss_items(post_list):
-        return [
-            {
-                "title": p["title"],
-                "link": f"{site_root}{p['slug']}/",
-                "guid": f"{site_root}{p['slug']}/",
-                "pub_date": format_datetime(p["date_dt"]),
-                "description": p["html"],
-                "author": authors[p["author"]]["name"],
-            }
-            for p in post_list
-        ]
-
+    rss_items = [
+        {
+            "title": p["title"],
+            "link": f"{site_root}{p['slug']}/",
+            "guid": f"{site_root}{p['slug']}/",
+            "pub_date": format_datetime(p["date_dt"]),
+            "description": p["html"],
+            "author": authors[p["author"]]["name"],
+        }
+        for p in posts
+    ]
     render_rss(
         env,
         channel={"title": SITE["title"], "link": site_root, "description": SITE["description"]},
-        items=rss_items(posts),
+        items=rss_items,
         out=dist_dir / "feed.xml",
     )
-    for key, author in authors.items():
-        author_posts = [p for p in posts if p["author"] == key]
-        render_rss(
-            env,
-            channel={
-                "title": f"{SITE['title']} — {author['name']}",
-                "link": f"{site_root}{key}/",
-                "description": f"Posts by {author['name']}.",
-            },
-            items=rss_items(author_posts),
-            out=dist_dir / key / "feed.xml",
-        )
 
     # Static assets.
     if STATIC_DIR.exists():

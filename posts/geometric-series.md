@@ -4,6 +4,7 @@ author: joe
 date: 2026-04-15
 slug: geometric-series
 draft: false
+technical: true
 ---
 
 Suppose you take a step of length one, then half a step, then a quarter of a
