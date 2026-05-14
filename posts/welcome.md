@@ -16,11 +16,6 @@ intention to "dumb things down." I think that is disrespectful. The posts will b
 
 There are no advertisements on this blog and there will never be any. There 
 will be no tracking. I don't plan to sell merch. I don't have any social media accounts that I want to 
-promote. 
+promote. This blog will never be slick or polished, but it won't be ugly. I refuse to render ugly equations.
 
-
-What I want, more than anything, is to recreate the style of website that I remember visiting as a child. This blog will never be slick or polished, but it won't be ugly. I refuse to render ugly equations.
-
-The pages are static HTML files. I don't plan on using any images. All visualizations are rendered using TikZ. 
-
-If you want to follow along without checking back, the [RSS feed](/feed.xml) is the polite way to do it.
+Math is easy. Math is fun. Math is for the people.
