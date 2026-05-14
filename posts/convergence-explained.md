@@ -6,10 +6,7 @@ slug: convergence-explained
 draft: false
 ---
 
-If you've ever heard a mathematician say a sum or sequence "converges,"
-and nodded along while quietly wondering what exactly was being claimed,
-this post is for you. The word is doing real work, and once you can hear
-that work it stops sounding like jargon.
+The notion of convergence is absolutely fundamental in mathematics. 
 
 ## The picture
 
@@ -24,15 +21,18 @@ if it never lands — is what convergence formalizes.
 
 ## The promise
 
-Here's the precise version. A sequence $a_1, a_2, a_3, \ldots$ *converges
+Here's the precise version. A sequence $a_1, a_2, a_3, \ldots, a_n$ *converges
 to $L$* if, for any tolerance you can name — call it $\varepsilon$, no
 matter how small — the sequence eventually gets within $\varepsilon$ of
 $L$, and stays there.
 
 That last clause does the heavy lifting. "Eventually" means: there's some
 position $N$ in the sequence past which everything is within $\varepsilon$
-of $L$. *Once you're close, you stay close.* Convergence isn't about
-getting to $L$; it's about a binding promise that the wandering stops.
+of $L$. *Once you're close, you stay close.* Written precisely, it looks like this: 
+
+$$|a_n - L| \leq \varepsilon, N \leq n.$$
+
+Convergence isn't about getting to $L$; it's about a binding promise that the wandering stops. We actually don't care if the sequence ever reaches $L$. Convergence is a weaker version of equality.
 
 It's worth noting that this is a [[?partial-sum|partial-sum-style]]
 argument when applied to series: a series $\sum a_n$ converges if its
@@ -41,29 +41,27 @@ partial sums form a sequence that converges in the sense above.
 ## A concrete example
 
 The walking-distance argument from [[geometric-series]] is the simplest
-case. The partial sums of $1 + 1/2 + 1/4 + \cdots$ are
+case. It is pretty straightforward to compute the first five partial sums
 
-$$ 1,\ \tfrac{3}{2},\ \tfrac{7}{4},\ \tfrac{15}{8},\ \tfrac{31}{16},\ \ldots, \tfrac{2^{n+1}-1}{2^n} $$
+$$ 1,\ \tfrac{3}{2},\ \tfrac{7}{4},\ \tfrac{15}{8},\ \tfrac{31}{16}.$$
 
-Pick any $\varepsilon$ — say, $0.001$. After enough terms, every partial
-sum is within $0.001$ of $2$ and stays there. After a few more, every
-partial sum is within $0.000001$ of $2$. Pick any $\varepsilon$ at all
-and the same thing happens. That's convergence.
+By inspection, one can see a pattern starting to form, i.e. the $n^{th}$ partial sum is $g_n = \tfrac{2^{n+1}-1}{2^n}$. The important thing to notice here is that the 1 in the numerator is a constant. As $n$ gets very large, that 1 is going to become arbitrarily small relative to $2^{n+1}$. A bit of algebra yields 
 
-Compare with the series $1 + 2 + 4 + 8 + \cdots$. Its partial sums grow
-without bound. There's no $L$ that the partial sums settle near, no
-matter how generous a tolerance you allow. That series *diverges*.
+$$g_n = \tfrac{2^{n+1}-1}{2^n} = \tfrac{2^{n+1}}{2^n}-\tfrac{1}{2^n} = 2 - \tfrac{1}{2^n}.$$ 
+
+As $n$ grows larger, we subtract increasingly smaller numbers from 2. That's convergence.
+
+Compare with the series $$D_n = \sum_{k=0}^n 2^k = 1 + 2 + 4 \ldots + 2^n.$$ Its partial sums grow without bound. There's no $L$ that the partial sums settle near, no
+matter how generous a tolerance you allow. That series *diverges*. Why do we care about this distinction? Suppose $D_n$ did converge to some $D$. 
+
+$$D = 1 + \underbrace{2 + 4 + 8 + \ldots}_{2D}$$
+
+$$D = 1 + 2D$$
+
+$$D = -1$$
+
+This is very clearly nonsense. $D$ is the sum of positive numbers. This is why convergence matters.
 
 ## Why the definition is shaped this way
 
-The formalism — "for any $\varepsilon$, eventually within $\varepsilon$"
-— looks fussy but answers a real question: how do you talk rigorously
-about a thing approaching a limit without ever reaching it? The answer
-is to flip the burden. You don't have to show the sequence "gets to" $L$.
-You only have to show that for any standard of closeness someone might
-demand, you can satisfy them.
-
-That's a powerful move. It's the same shape of argument that powers
-calculus: derivatives, integrals, and continuity are all defined in terms
-of "for any tolerance, eventually within tolerance" — they're all
-convergence claims wearing different clothes.
+The definition for convergence may seem fiddly and dumb, but there's a reason for it. It's because it shows up all over the place. There are only so many good ideas in math and mathematicians figured out pretty early on that you should just reuse them wherever you can. When something is so ubiquitous the definition for it _must_ be air tight.
