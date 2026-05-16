@@ -7,8 +7,6 @@ draft: false
 ---
 For most of us, our first exposure to mathematics is counting. How many of the thing do I have? How many minutes do I have to play? I don't want four grapes, I want five. We're born with an inherent sense of quantity. We know when something is big. We can visually assess when there is more or less of something. That's _quantity_. There is a difference between quantity and numbers. Numbers are things that we use to describe quantities.[^1] Don't get me wrong. Using number to describe a physical quantity is immensely useful, but things really become interesting when you learn to separate the two ideas entirely.
 
-
-
 ## The Natural Numbers and Counting
 
 Let us begin at the beginning. The natural numbers, denoted by $\mathbb{N}$, or whole numbers: 0, 1, 2, 3, and so on.[^2] The natural numbers have many nice properties. My favorite is closure under addition. We say a set $\set{S}$ is closed under addition if for any $n_1,n_2 \in \mathbb{N}$ then the sum, $n_1+n_2$, is also a natural number.
@@ -29,7 +27,7 @@ Notice that we haven't mentioned subtraction once. We are thinking purely in ter
 
  Now we ask ourselves for a given $z \in \mathbb{Z}$, $z\neq 0$, does there exist a unique $z_*$ such that $z\cdot z_* = 1?$ If such a $z_*$ exists, we say it is the _multiplicative inverse_ of $z$. It's true for 1 and -1, but what the remaining integers? How do we know this?
 
- Since $z\neq 0$, we know that $|z|>0$. If $z$ is either positive or negative. We can assume, without loss of generality, that $z>1.$ Well, since $z>1$ it must be the case that $z_* = \tfrac{1}{z} < 1$. Since $z>0$, we also know that $z_* > 0$. Thus, $0 < z_* < 1$. Uh oh, there aren't any integers in between 0 and 1. We're going to need more numbers.
+ Since $z\neq 0$, we know that $|z|>0$. We can assume, without loss of generality, that $z>1.$ Well, since $z>1$ it must be the case that $z_* = \tfrac{1}{z} < 1$. Since $z>0$, we also know that $z_* > 0$. Thus, $0 < z_* < 1$. Uh oh, there aren't any integers in between 0 and 1. We're going to need more numbers.
 
  We say a number $q \in \mathbb{Q}$ is _rational_ if there exist two integers $p,r \in \mathbb{Z}$ such that $q=p/r.$ That's it. The rational numbers are also numbers whose decimal representation is either finite or repeating. Where the integers gave us closure under addition, the rationals get us to closure under multiplication.
 
