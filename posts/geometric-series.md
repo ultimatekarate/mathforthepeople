@@ -66,11 +66,11 @@ Suppose, we let $r=2$. Then we get something like this:
 
 <div id="eq:geometric-diverge" class="equation">
 
-$$ S = \frac{a}{1 - 2} = -a = a + a/2 + a/4 + a/8 + \cdots $$
+$$ S = \frac{a}{1 - 2} = -a = a + 2a + 4a + 8a + \cdots $$
 
 </div>
 
-This is clearly nonsense for $a \neq 0$. If $a>0$, then $-a < 0$. The right hand side $$ a + a/2 + a/4 + a/8+ \cdots $$ is clearly the sum of positive numbers - it has no hope of being negative! The reason why it is nonsense is because the sum _diverges_ for $|r|>1.$ The summation formula we derived only makes sense when the sum _converges_.
+This is clearly nonsense for $a \neq 0$. If $a>0$, then $-a < 0$. The right hand side $$ a + 2a + 4a + 8a+ \cdots $$ is clearly the sum of positive numbers - it has no hope of being negative! The reason why it is nonsense is because the sum _diverges_ for $|r|>1.$ The summation formula we derived only makes sense when the sum _converges_.
 
 ## A picture
 
