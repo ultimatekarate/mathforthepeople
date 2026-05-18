@@ -55,7 +55,7 @@ There you have it, there exists at least one irrational number.
 
 The ideas discussed in this post are simple and familiar to most, but just because something is simple and familiar doesn't mean we can't think deeply about them. Numbers don't just exist in a vacuum. They have structure. They have gaps. This whole post was an exercise in examining those gaps and seeing where they might lead.
 
-We started with counting and natural numbers. We ended up with a subset chain $\mathbb{N} \subset \mathbb{Z} \subset\mathbb{Q} \subset\mathbb{R}$ where each link was formed by asking some variation of "What if ...?"
+We started with counting and natural numbers. We ended up with a subset chain $\mathbb{N} \subset \mathbb{Z} \subset\mathbb{Q} \subset\mathbb{R}$ where each link was formed by asking some variation of "What if ...?" An observant reader will notice that I have not mentioned the complex numbers. They will get their own post in the near future.
 
 [^1]: IAoFF: I'm fully aware of the set theoretic definition of natural numbers, equivalence classes, and Dedekind cuts. We're building intuitive scaffolding here, not trying to scare people away. I see you though, number theorists. I appreciate your work.
 [^2]: There are some folks who will say that 0 is not a natural number. Those folks are called assholes.
