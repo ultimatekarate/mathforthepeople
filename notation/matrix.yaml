@@ -4,6 +4,6 @@ sort_order: 3
 shortcut: mat
 expansion: "\\mathsf{#1}"
 description: |
-  Capital sans-serif letters. Write `\mat{A}` in math —
+  Capital sans-serif letters —
   $\mat{A}$, $\mat{M}$, $\mat{P}$. Inverses and transposes
   inherit the convention: $\mat{M}^{-1}$, $\mat{P}^\top$.

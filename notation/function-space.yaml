@@ -4,6 +4,6 @@ sort_order: 6
 shortcut: fs
 expansion: "\\mathscr{#1}"
 description: |
-  Capital script letters for function spaces. Write `\fs{H}` in math —
+  Capital script letters for function spaces —
   $\fs{H}$ for a Hilbert space, $\fs{C}$ for a class of smooth
   functions, etc.

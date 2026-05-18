@@ -47,12 +47,10 @@ $$\Sigma_{k=1}^n \left(ar^k - ar^{k-1}\right) = a - ar^{n+1}.$$
 Factor the left side and solve:
 
 <div id="eq:geometric" class="equation">
-$$ S_n = \frac{a(1-r^{n+1})}{1 - r},$$ 
+$$ S_n = \frac{a(1-r^{n+1})}{1 - r},$$
 </div>
 
-
 since $|r|<1,$ it follows that $r^{n+1} \to 0$ as $n \to \infty$. So $$ S = \frac{a}{1 - r}.$$
-
 
 That's the formula. For our walk, $a = 1$ and $r = 1/2$, so $S = 1/(1-1/2) = 2$.
 The total distance is exactly two steps, no matter how many halvings you
@@ -70,7 +68,7 @@ $$ S = \frac{a}{1 - 2} = -a = a + 2a + 4a + 8a + \cdots $$
 
 </div>
 
-This is clearly nonsense for $a \neq 0$. If $a>0$, then $-a < 0$. The right hand side $$ a + 2a + 4a + 8a+ \cdots $$ is clearly the sum of positive numbers - it has no hope of being negative! The reason why it is nonsense is because the sum _diverges_ for $|r|>1.$ The summation formula we derived only makes sense when the sum _converges_.
+This is clearly nonsense for $a \neq 0$. If $a>0$, then $-a < 0$. The right hand side $$ a + 2a + 4a + 8a+ \cdots $$ is clearly the sum of positive numbers - it has no hope of being negative! The reason why it is nonsense is because the sum *diverges* for $|r|>1.$ The summation formula we derived only makes sense when the sum *converges*.
 
 ## A picture
 
