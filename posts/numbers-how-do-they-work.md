@@ -35,7 +35,7 @@ Notice again, that we're just talking in terms of multiplication and not divisio
 
 ### Division by zero
 
-Why can't you divide by zero? Well, you can, it's just nonsense. Don't think about it in terms of quantity. Think about it in terms of number. Consider the following $1 \cdot 0 = 2 \cdot 0.$ Suppose I divide both left and right hand side by 0. I'm left with $1=2$, it's very obviously false. The problem with division by 0 is with division by 0. The problem is with multiplication by 0. If I start at 2 and decide I want to go to 5, I can get there many ways. I could add 3. I could multiply by $\tfrac{5}{2}$. If want to get back to 2 I could subtract 3 or divide by $\tfrac{5}{2}$. Algebraically, I'm applying an operation followed immediately by its inverse.
+Why can't you divide by zero? Well, you can, it's just nonsense. Don't think about it in terms of quantity. Think about it in terms of number. Consider the following $1 \cdot 0 = 2 \cdot 0.$ Suppose I divide both left and right hand side by 0. I'm left with $1=2$, it's very obviously false. The problem with division by 0 isn't with division by 0. The problem is with multiplication by 0. If I start at 2 and decide I want to go to 5, I can get there many ways. I could add 3. I could multiply by $\tfrac{5}{2}$. If want to get back to 2 I could subtract 3 or divide by $\tfrac{5}{2}$. Algebraically, I'm applying an operation followed immediately by its inverse.
 
 Multiplying by 0 is not invertible, meaning that you can't get back to where you started. Invertible operations leave directions telling you how to get back home. A non-invertible operation let's you go someplace but it forces you to throw away the map you used to get their once you arrive.
 
